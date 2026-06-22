@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - CAPA System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Organization Settings</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.company_logo.label(class="form-label") }}
+                        {{ form.company_logo(class="form-control") }}
+                        {% if form.company_logo.errors %}
+                            <div class="text-danger small">{% for error in form.company_logo.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                        {% if org_settings.company_logo %}
+                            <div class="mt-2">
+                                <img src="{{ url_for('static', filename=org_settings.company_logo) }}" alt="Company Logo" class="img-fluid" style="max-height: 120px;" />
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.company_name.label(class="form-label") }}
+                        {{ form.company_name(class="form-control") }}
+                        {% if form.company_name.errors %}
+                            <div class="text-danger small">{% for error in form.company_name.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.document_title.label(class="form-label") }}
+                        {{ form.document_title(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.document_number.label(class="form-label") }}
+                        {{ form.document_number(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.department.label(class="form-label") }}
+                        {{ form.department(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.process_owner.label(class="form-label") }}
+                        {{ form.process_owner(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{% for error in form.email.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary-custom text-white") }}
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

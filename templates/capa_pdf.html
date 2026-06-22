@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ capa.capa_id }} - CAPA Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 40px; 
+            color: #333; 
+            line-height: 1.6;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid #667eea; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+        }
+        .header h1 { 
+            color: #667eea; 
+            margin: 0; 
+            font-size: 28px;
+        }
+        .header .company-name { 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: #444;
+            margin-top: 5px;
+        }
+        .header p { 
+            margin: 3px 0; 
+            color: #666; 
+            font-size: 12px;
+        }
+        .section { 
+            margin-bottom: 25px; 
+        }
+        .section h3 { 
+            color: #667eea; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 8px; 
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .label { 
+            font-weight: bold; 
+            color: #555; 
+        }
+        .value { 
+            margin-left: 5px; 
+            color: #333;
+        }
+        .status-badge { 
+            display: inline-block; 
+            padding: 4px 12px; 
+            border-radius: 12px; 
+            font-size: 11px; 
+            font-weight: bold;
+        }
+        .status-open { background: #fff3cd; color: #856404; }
+        .status-in-progress { background: #cce5ff; color: #004085; }
+        .status-pending-verification { background: #e2e3f3; color: #383d7a; }
+        .status-closed { background: #d4edda; color: #155724; }
+        .status-overdue { background: #f8d7da; color: #721c24; }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+            font-size: 13px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            text-align: left; 
+        }
+        th { 
+            background: #f8f9fa; 
+            font-weight: bold; 
+            color: #555;
+        }
+        .info-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+        }
+        .info-item { 
+            padding: 8px 0; 
+            border-bottom: 1px dotted #eee;
+        }
+        .evidence-summary { 
+            background: #f0f4ff; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border-left: 4px solid #667eea;
+        }
+        .evidence-summary ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .evidence-summary li {
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        .content-box {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #eee;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .footer { 
+            margin-top: 50px; 
+            padding-top: 20px; 
+            border-top: 2px solid #eee; 
+            text-align: center; 
+            font-size: 10px; 
+            color: #999;
+        }
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 80px;
+            color: rgba(102, 126, 234, 0.08);
+            font-weight: bold;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">CAPA</div>
+
+    <div class="header">
+        {% if settings.company_logo %}
+            <div style="margin-bottom: 12px;">
+                <img src="{{ url_for('static', filename=settings.company_logo) }}" alt="Company Logo" style="max-height: 90px; max-width: 300px;" />
+            </div>
+        {% endif %}
+        <h1>{{ settings.document_title or 'CAPA Report' }}</h1>
+        {% if settings.company_name %}
+            <div class="company-name">{{ settings.company_name }}</div>
+        {% endif %}
+        {% if settings.document_number %}<p>Document Number: {{ settings.document_number }}</p>{% endif %}
+        {% if settings.department %}<p>Department: {{ settings.department }}</p>{% endif %}
+        {% if settings.process_owner %}<p>Process Owner: {{ settings.process_owner }}</p>{% endif %}
+        {% if settings.email %}<p>Email: {{ settings.email }}</p>{% endif %}
+    </div>
+
+    <div class="section">
+        <h3>CAPA Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">CAPA ID:</span>
+                <span class="value">{{ capa.capa_id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Status:</span>
+                <span class="status-badge status-{{ capa.status|lower|replace(' ', '-') }}">{{ capa.status }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Source:</span>
+                <span class="value">{{ capa.source }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Action Type:</span>
+                <span class="value">{{ capa.action_type }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Owner:</span>
+                <span class="value">{{ capa.owner }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Due Date:</span>
+                <span class="value">{{ capa.due_date.strftime('%Y-%m-%d') if capa.due_date else 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Date Opened:</span>
+                <span class="value">{{ capa.date_opened.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Date Closed:</span>
+                <span class="value">{{ capa.date_closed.strftime('%Y-%m-%d %H:%M') if capa.date_closed else 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Description</h3>
+        <div class="content-box">{{ capa.description or 'No description provided.' }}</div>
+    </div>
+
+    <div class="section">
+        <h3>Root Cause Analysis</h3>
+        <div class="content-box">{{ capa.root_cause or 'Not specified.' }}</div>
+    </div>
+
+    <div class="section">
+        <h3>Action Plan / Taken</h3>
+        <div class="content-box">{{ capa.action_taken or 'No action plan specified.' }}</div>
+    </div>
+
+    <div class="section">
+        <h3>Progress Tracking</h3>
+        <table>
+            <tr>
+                <th style="width: 30%;">Progress Status</th>
+                <td>{{ capa.progress_status }}</td>
+            </tr>
+            <tr>
+                <th>Action Started Date</th>
+                <td>{{ capa.action_started_date.strftime('%Y-%m-%d') if capa.action_started_date else 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Action Completed Date</th>
+                <td>{{ capa.action_completed_date.strftime('%Y-%m-%d') if capa.action_completed_date else 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Effectiveness & Verification</h3>
+        <table>
+            <tr>
+                <th style="width: 30%;">Effectiveness Check</th>
+                <td>{{ capa.effectiveness_check or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Feedback / Lessons Learned</th>
+                <td>{{ capa.feedback or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Verified By</th>
+                <td>{{ capa.verified_by or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Verification Date</th>
+                <td>{{ capa.verification_date.strftime('%Y-%m-%d') if capa.verification_date else 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Attached Evidence Summary</h3>
+        <div class="evidence-summary">
+            <p><strong>Total Evidence Files:</strong> {{ evidence_files|length }}</p>
+            {% if evidence_files %}
+                <ul>
+                    {% for evidence in evidence_files %}
+                    <li>
+                        <strong>{{ evidence.original_filename }}</strong>
+                        ({{ evidence.file_type|upper }}, {{ "%.1f"|format(evidence.file_size / 1024) }} KB)
+                        {% if evidence.description %} - {{ evidence.description[:80] }}{% if evidence.description|length > 80 %}...{% endif %}{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p style="font-size: 11px; color: #888; margin-top: 10px; font-style: italic;">
+                    Note: Evidence files are stored in the system and can be downloaded from the web interface.
+                    This report contains a summary only. Original files are not embedded.
+                </p>
+            {% else %}
+                <p style="color: #999; font-style: italic;">No evidence files attached to this CAPA.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Generated on {{ now.strftime('%Y-%m-%d %H:%M:%S UTC') }} | CAPA Management System</p>
+        <p>This is a computer-generated report. For official use only.</p>
+        <p>Report ID: {{ capa.capa_id }}-{{ now.strftime('%Y%m%d%H%M%S') }}</p>
+    </div>
+</body>
+</html>

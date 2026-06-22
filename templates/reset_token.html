@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Set New Password - CAPA System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header text-white text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h4 class="mb-0"><i class="bi bi-shield-lock"></i> Set New Password</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.password.label(class='form-label') }}
+                        {{ form.password(class='form-control', placeholder='Enter new password') }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password2.label(class='form-label') }}
+                        {{ form.password2(class='form-control', placeholder='Confirm new password') }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class='btn btn-primary-custom text-white') }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

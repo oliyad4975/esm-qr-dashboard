@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage CAPAs - CAPA System{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-list-check"></i> Manage All CAPAs</h2>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>CAPA ID</th>
+                        <th>Owner</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Date Opened</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for capa in capas %}
+                    <tr>
+                        <td>{{ capa.capa_id }}</td>
+                        <td>{{ capa.owner_user.username }}</td>
+                        <td>{{ capa.source }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'warning' if capa.status == 'Open' else 'info' if capa.status == 'In Progress' else 'success' if capa.status == 'Closed' else 'secondary' }}">
+                                {{ capa.status }}
+                            </span>
+                        </td>
+                        <td>{{ capa.date_opened.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin_delete_capa', id=capa.id) }}" class="d-inline" onsubmit="return confirm('Delete this CAPA?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

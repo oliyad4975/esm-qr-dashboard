@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - CAPA System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+        <p class="text-muted">Welcome back, {{ current_user.username }}!</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h1 class="text-primary">{{ total }}</h1>
+                <p class="text-muted mb-0">Total CAPAs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h1 class="text-warning">{{ open }}</h1>
+                <p class="text-muted mb-0">Open</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h1 class="text-info">{{ in_progress }}</h1>
+                <p class="text-muted mb-0">In Progress</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h1 class="text-success">{{ pending }}</h1>
+                <p class="text-muted mb-0">Pending Verification</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if overdue > 0 %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> <strong>{{ overdue }}</strong> CAPA(s) are overdue!
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent CAPAs</h5>
+                <a href="{{ url_for('capa_list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>CAPA ID</th>
+                                <th>Source</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for capa in recent %}
+                            <tr>
+                                <td>{{ capa.capa_id }}</td>
+                                <td>{{ capa.source }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if capa.status == 'Open' else 'info' if capa.status == 'In Progress' else 'success' if capa.status == 'Closed' else 'secondary' }}">
+                                        {{ capa.status }}
+                                    </span>
+                                </td>
+                                <td>{{ capa.due_date.strftime('%Y-%m-%d') if capa.due_date else 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('capa_detail', id=capa.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No CAPAs yet. <a href="{{ url_for('capa_new') }}">Create one</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('capa_new') }}" class="btn btn-primary-custom text-white">
+                        <i class="bi bi-plus-lg"></i> New CAPA
+                    </a>
+                    <a href="{{ url_for('capa_list') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-list"></i> View All CAPAs
+                    </a>
+                    <a href="{{ url_for('capas_list_pdf') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-file-pdf"></i> Download PDF Report
+                    </a>
+                    <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-gear"></i> Organization Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

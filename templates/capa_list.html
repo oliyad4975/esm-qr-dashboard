@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My CAPAs - CAPA System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-open { background-color: #fff3cd; color: #856404; }
+        .status-in-progress { background-color: #cce5ff; color: #004085; }
+        .status-pending-verification { background-color: #e2e3f3; color: #383d7a; }
+        .status-closed { background-color: #d4edda; color: #155724; }
+        .status-overdue { background-color: #f8d7da; color: #721c24; }
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        .capa-row:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}"><i class="bi bi-shield-check"></i> CAPA System</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-house"></i> Dashboard</a>
+                <a class="nav-link active" href="{{ url_for('capa_list') }}"><i class="bi bi-list"></i> My CAPAs</a>
+                <a class="nav-link" href="{{ url_for('settings') }}"><i class="bi bi-gear"></i> Settings</a>
+                <a class="nav-link" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-list-ul"></i> My CAPAs</h2>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('capas_list_pdf') }}" class="btn btn-outline-danger">
+                    <i class="bi bi-file-pdf"></i> PDF Report
+                </a>
+                <a href="{{ url_for('capa_new') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> New CAPA
+                </a>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('capa_list', status='all') }}" class="btn btn-outline-secondary filter-btn {{ 'active' if current_filter == 'all' else '' }}">All</a>
+                    <a href="{{ url_for('capa_list', status='Open') }}" class="btn btn-outline-secondary filter-btn {{ 'active' if current_filter == 'Open' else '' }}">Open</a>
+                    <a href="{{ url_for('capa_list', status='In Progress') }}" class="btn btn-outline-secondary filter-btn {{ 'active' if current_filter == 'In Progress' else '' }}">In Progress</a>
+                    <a href="{{ url_for('capa_list', status='Pending Verification') }}" class="btn btn-outline-secondary filter-btn {{ 'active' if current_filter == 'Pending Verification' else '' }}">Pending Verification</a>
+                    <a href="{{ url_for('capa_list', status='Closed') }}" class="btn btn-outline-secondary filter-btn {{ 'active' if current_filter == 'Closed' else '' }}">Closed</a>
+                    <a href="{{ url_for('capa_list', status='Overdue') }}" class="btn btn-outline-secondary filter-btn {{ 'active' if current_filter == 'Overdue' else '' }}">Overdue</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                {% if capas %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>CAPA ID</th>
+                                <th>Source</th>
+                                <th>Description</th>
+                                <th>Owner</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Evidence</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for capa in capas %}
+                            <tr class="capa-row">
+                                <td><strong>{{ capa.capa_id }}</strong></td>
+                                <td><span class="badge bg-light text-dark">{{ capa.source }}</span></td>
+                                <td>
+                                    {{ capa.description[:50] }}{% if capa.description|length > 50 %}...{% endif %}
+                                </td>
+                                <td>{{ capa.owner }}</td>
+                                <td>
+                                    {% if capa.due_date %}
+                                        {{ capa.due_date.strftime('%Y-%m-%d') }}
+                                        {% if capa.is_overdue() %}
+                                            <span class="badge bg-danger">!</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ capa.status|lower|replace(' ', '-') }}">
+                                        {{ capa.status }}
+                                    </span>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ capa.progress_status }}</span></td>
+                                <td class="text-center">
+                                    {% set evidence_count = capa.evidence_files|length %}
+                                    {% if evidence_count > 0 %}
+                                        <span class="badge bg-info"><i class="bi bi-paperclip"></i> {{ evidence_count }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ url_for('capa_detail', id=capa.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('capa_edit', id=capa.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ url_for('capa_pdf', id=capa.id) }}" class="btn btn-sm btn-outline-danger" title="PDF">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="text-muted mt-3">No CAPAs found.</p>
+                    <a href="{{ url_for('capa_new') }}" class="btn btn-primary">Create your first CAPA</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

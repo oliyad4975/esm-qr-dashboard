@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}New CAPA - CAPA System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0"><i class="bi bi-plus-lg"></i> Create New CAPA</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.source.label(class="form-label") }}
+                            {{ form.source(class="form-select") }}
+                            {% if form.source.errors %}
+                                <div class="text-danger small">{% for error in form.source.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.action_type.label(class="form-label") }}
+                            {{ form.action_type(class="form-select") }}
+                            {% if form.action_type.errors %}
+                                <div class="text-danger small">{% for error in form.action_type.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="4", placeholder="Describe the issue or non-conformance...") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small">{% for error in form.description.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.root_cause.label(class="form-label") }}
+                        {{ form.root_cause(class="form-control", rows="3", placeholder="Initial root cause analysis (optional)...") }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.owner.label(class="form-label") }}
+                            {{ form.owner(class="form-control", placeholder="Responsible person") }}
+                            {% if form.owner.errors %}
+                                <div class="text-danger small">{% for error in form.owner.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.due_date.label(class="form-label") }}
+                            {{ form.due_date(class="form-control", type="date") }}
+                            {% if form.due_date.errors %}
+                                <div class="text-danger small">{% for error in form.due_date.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.action_taken.label(class="form-label") }}
+                        {{ form.action_taken(class="form-control", rows="3", placeholder="Planned corrective/preventive actions...") }}
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary-custom text-white") }}
+                        <a href="{{ url_for('capa_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

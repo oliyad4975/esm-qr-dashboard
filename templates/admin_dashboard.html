@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - CAPA System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h1 class="text-primary">{{ users|length }}</h1>
+                <p class="text-muted mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h1 class="text-success">{{ total_capas }}</h1>
+                <p class="text-muted mb-0">Total CAPAs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h1 class="text-info">{{ users|selectattr('is_admin', 'equalto', true)|list|length }}</h1>
+                <p class="text-muted mb-0">Admins</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Quick Links</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary">Manage Users</a>
+            <a href="{{ url_for('admin_capas') }}" class="btn btn-outline-success">Manage CAPAs</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
