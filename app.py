@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (STRICT RED-TO-BLUE TAB ENGINE)
+# STYLING & VIEWPORT CONFIGURATION (BLACK-TO-BLUE TAB ENGINE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -28,14 +28,14 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. Strict Red-to-Blue Tab State Transition Engine */
+    /* 2. Strict Black-to-Blue Tab State Transition Engine */
     div[data-testid="stTabBar"] {
         background-color: transparent !important;
-        border-bottom: 2px solid #E0F2FE !important;
+        border-bottom: 2px solid #0000FF !important; /* Grounding blue indicator line */
         padding-bottom: 4px !important;
     }
     
-    /* Target all tab buttons globally - INITIAL STATE (INACTIVE CORPORATE RED) */
+    /* Target all tab buttons globally - INITIAL STATE (INACTIVE BLACK) */
     div[data-testid="stTabBar"] button,
     div[data-testid="stTabBar"] [data-baseweb="tab"] {
         background-color: transparent !important;
@@ -45,20 +45,20 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Force deep child selectors to clear browser cache and template native themes */
+    /* Force deep child selectors to render in bold Black initially */
     div[data-testid="stTabBar"] button p,
     div[data-testid="stTabBar"] [data-baseweb="tab"] p,
     div[data-testid="stTabBar"] button div,
     div[data-testid="stTabBar"] [data-baseweb="tab"] div {
-        color: #DC2626 !important; /* Sharp High-Visibility Corporate Red */
+        color: #000000 !important; /* Sharp High-Visibility Inactive Black */
         font-weight: bold !important;
         font-size: 16px !important;
     }
     
-    /* Hover state performance adjustment */
+    /* Hover state adjustment */
     div[data-testid="stTabBar"] button:hover p,
     div[data-testid="stTabBar"] [data-baseweb="tab"]:hover p {
-        color: #B91C1C !important;
+        color: #1D4ED8 !important;
     }
     
     /* ACTIVE STATE OVERRIDE (WHEN CLICKED -> CORPORATE BLUE) */
