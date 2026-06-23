@@ -8,7 +8,7 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION
+# STYLING & VIEWPORT CONFIGURATION (UPDATED VISUAL MATRIX)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="National Standards Mark Batch Production Engine",
@@ -19,8 +19,27 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    .main-title { font-size: 2.6rem !important; color: #1E40AF; font-weight: 800; letter-spacing: -0.05rem; }
-    .sub-title { font-size: 1.1rem !important; color: #4B5563; margin-bottom: 2rem; }
+    /* 1. Styled Header Banner: White text over blue background */
+    .main-title { 
+        font-size: 2.6rem !important; 
+        color: #FFFFFF !important; 
+        background-color: #1E40AF !important; 
+        font-weight: 800; 
+        letter-spacing: -0.05rem;
+        padding: 1.5rem !important;
+        border-radius: 8px !important;
+        text-align: center !important;
+        margin-bottom: 1rem !important;
+    }
+    .sub-title { font-size: 1.1rem !important; color: #4B5563; margin-bottom: 2rem; text-align: center; }
+    
+    /* 2. Global Widget Labels Forced to 14px and Bold Font Size */
+    [data-testid="stWidgetLabel"] p {
+        font-size: 14px !important;
+        font-weight: bold !important;
+        color: #1F2937 !important;
+    }
+    
     .success-panel { border-radius: 8px; padding: 1.5rem; background-color: #F0FDF4; border-left: 6px solid #16A34A; margin-top: 1.5rem; }
     </style>
 """, unsafe_allow_html=True)
