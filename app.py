@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (LIGHT BLUE BACKGROUND & SHADED TEXTS)
+# STYLING & VIEWPORT CONFIGURATION (COMPLETE TAB BUTTON SHADING OVERRIDES)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -28,22 +28,45 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. Shaded Tabs Architecture (Automated Pipeline Room & Sandbox) */
-    div[data-testid="stTabBar"] button {
+    /* 2. Comprehensive Tab Row and Container Shading Overrides */
+    div[data-testid="stTabBar"] {
+        background-color: transparent !important;
+        padding: 0.5rem 0 !important;
+    }
+    
+    /* Targets the individual Tab buttons specifically */
+    div[data-testid="stTabBar"] button, 
+    div[data-testid="stTabBar"] [data-baseweb="tab"] {
         background-color: #1E40AF !important; /* Solid corporate blue shading */
         color: #FFFFFF !important;            /* High-contrast crisp white text */
         font-weight: bold !important;
-        font-size: 14px !important;
-        border-radius: 4px !important;
-        padding: 0.5rem 1rem !important;
-        margin-right: 0.5rem !important;
-        border: none !important;
+        font-size: 15px !important;
+        border-radius: 6px !important;
+        padding: 0.6rem 1.2rem !important;
+        margin-right: 0.75rem !important;
+        border: 1px solid #1D4ED8 !important;
+        transition: all 0.2s ease-in-out;
     }
     
-    /* Active/Selected Tab State */
-    div[data-testid="stTabBar"] button[aria-selected="true"] {
-        background-color: #0000FF !important; /* Brighter blue accent for active state */
-        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2) !important;
+    /* Enforces high-contrast white text color even during hover interactions */
+    div[data-testid="stTabBar"] button:hover {
+        background-color: #1D4ED8 !important;
+        color: #FFFFFF !important;
+    }
+    
+    /* Active / Selected Tab State Accentuation */
+    div[data-testid="stTabBar"] button[aria-selected="true"],
+    div[data-testid="stTabBar"] [aria-selected="true"] {
+        background-color: #0000FF !important; /* Vivid active accent blue */
+        color: #FFFFFF !important;            /* Retain white text visibility */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid #0000D9 !important;
+    }
+    
+    /* Overrides internal block text inheritance to force white presentation */
+    div[data-testid="stTabBar"] button p {
+        color: #FFFFFF !important;
+        font-weight: bold !important;
     }
 
     /* 3. Shaded Heading Panel (Automated Execution Configuration Room) */
@@ -56,7 +79,7 @@ st.markdown("""
         border-radius: 4px !important;
         margin-top: 1.5rem !important;
         margin-bottom: 1.5rem !important;
-        display: inline-block !important;      /* Wrap exactly around text scale */
+        display: inline-block !important;      
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
     }
     
@@ -258,7 +281,7 @@ ui_font_sz = st.sidebar.slider("Base Label Font Size", 16, 60, 36, step=2)
 st.sidebar.markdown("---")
 ui_disk_path = st.sidebar.text_input("Local Output Directory Target Path", value="output/esm_labels/")
 
-# Shaded Tab Interfaces generated natively via CSS inject above
+# Shaded Tab Interfaces generated natively via advanced CSS injector block above
 tab_production, tab_sandbox = st.tabs(["🚀 Automated Pipeline Room", "🔍 Live Vector Structural Sandbox"])
 
 # 1. LIVE SANDBOX CALIBRATION TAB
@@ -287,7 +310,6 @@ with tab_sandbox:
 
 # 2. RUNTIME AUTOMATION PIPELINE ROOM
 with tab_production:
-    # High-contrast shaded heading block matching the exact specification image 
     st.markdown("<div class='shaded-header-panel'>Automated Execution Configuration Room</div>", unsafe_allow_html=True)
     
     u_col1, u_col2 = st.columns(2)
