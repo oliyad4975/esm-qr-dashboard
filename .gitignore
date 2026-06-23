@@ -1,0 +1,8 @@
+# Ignore Python system files and environments
+__pycache__/
+venv/
+*.pyc
+*.pyo
+
+# Ignore executables
+cloudflared.exe
