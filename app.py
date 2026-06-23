@@ -29,7 +29,6 @@ st.markdown("""
     }
     
     /* 2. UNIVERSAL TAB CONTROLLER: Force absolute scannability across all Streamlit versions */
-    /* Target the base list container */
     [data-baseweb="tab-list"], 
     div[data-testid="stTabBar"], 
     .stTabs [role="tablist"] {
@@ -38,34 +37,28 @@ st.markdown("""
         padding-bottom: 8px !important;
         gap: 14px !important;
     }
-    
-    #tabs-bgroup-container {
-        gap: 14px !important;
-    }
 
     /* 3. INITIAL / INACTIVE STATE: Enforce crisp black text with distinct border boxes */
     [data-baseweb="tab"], 
     div[data-testid="stTabBar"] button, 
     .stTabs [role="tab"] {
-        background-color: #FFFFFF !important;  /* Pure white background for high-contrast visibility */
-        border: 2px solid #000000 !important;  /* Crisp solid black border outline */
+        background-color: #FFFFFF !important;  
+        border: 2px solid #000000 !important;  
         border-radius: 6px !important;
         padding: 8px 18px !important;
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Target every possible text element layer deep inside the unselected buttons */
     [data-baseweb="tab"] p, [data-baseweb="tab"] span, [data-baseweb="tab"] div,
     div[data-testid="stTabBar"] button p, div[data-testid="stTabBar"] button span, div[data-testid="stTabBar"] button div,
     .stTabs [role="tab"] p, .stTabs [role="tab"] span, .stTabs [role="tab"] div {
-        color: #000000 !important;             /* Explicitly force text color to deep solid black */
-        font-weight: 700 !important;            /* Extra bold weighting for professional presentation */
+        color: #000000 !important;             
+        font-weight: 700 !important;            
         font-size: 16px !important;
-        opacity: 1.0 !important;                /* Strip away any native fainted opacity layers */
+        opacity: 1.0 !important;                
     }
     
-    /* Hover micro-interactions */
     [data-baseweb="tab"]:hover, div[data-testid="stTabBar"] button:hover, .stTabs [role="tab"]:hover {
         border-color: #1D4ED8 !important;
         background-color: #F1F5F9 !important;
@@ -76,21 +69,19 @@ st.markdown("""
     [data-baseweb="tab"][aria-selected="true"], 
     div[data-testid="stTabBar"] button[aria-selected="true"],
     .stTabs [role="tab"][aria-selected="true"] {
-        background-color: #EFF6FF !important;  /* Soft corporate blue background tint */
-        border: 2.5px solid #0000FF !important; /* Thick corporate blue structural border block */
+        background-color: #EFF6FF !important;  
+        border: 2.5px solid #0000FF !important; 
         box-shadow: 0px 4px 8px rgba(0, 0, 255, 0.15) !important;
     }
     
-    /* Target text layers inside the active button element */
     [aria-selected="true"] p, [aria-selected="true"] span, [aria-selected="true"] div,
     [data-baseweb="tab"][aria-selected="true"] p, [data-baseweb="tab"][aria-selected="true"] span,
     div[data-testid="stTabBar"] button[aria-selected="true"] p, div[data-testid="stTabBar"] button[aria-selected="true"] span,
     .stTabs [role="tab"][aria-selected="true"] p, .stTabs [role="tab"][aria-selected="true"] span {
-        color: #0000FF !important;             /* Vivid Corporate Blue text output */
+        color: #0000FF !important;             
         font-weight: 700 !important;
     }
 
-    /* 5. Shaded Heading Panel (Automated Execution Configuration Room) */
     .shaded-header-panel {
         background-color: #1E40AF !important; 
         color: #FFFFFF !important;            
@@ -104,7 +95,6 @@ st.markdown("""
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
     }
     
-    /* 6. Styled Header Banner Box Architecture */
     .main-title-container { 
         background-color: #0000FF !important; 
         padding: 1.5rem !important;
@@ -132,7 +122,6 @@ st.markdown("""
         letter-spacing: 0.02rem !important;
     }
     
-    /* Global Widget Labels Forced to 14px and Bold Font Size */
     [data-testid="stWidgetLabel"] p {
         font-size: 14px !important;
         font-weight: bold !important;
@@ -152,38 +141,47 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# DUAL-COLUMN GRAPHIC RENDER ENGINE
+# HIGH-PRECISION DUAL-COLUMN COMPLIANCE CARD RENDER ENGINE
 # -------------------------------------------------------------------------
 def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
-    """Compiles high-resolution assets into a structured dual-column compliance card."""
+    """Compiles high-resolution assets into a structured dual-column compliance card matching the 'Good' layout symmetry exactly."""
+    # Create pure white baseline canvas
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
-    qr_target_dim = int(c_height * 0.86)
-    logo_target_dim = int(c_height * 0.38)
-    
-    qr_x_origin = int(c_width * 0.04)
+    # 1. Geometry Calculations & Absolute Spacing Bounds
+    qr_target_dim = int(c_height * 0.82)
+    qr_x_origin = int(c_width * 0.05)
     qr_y_origin = (c_height - qr_target_dim) // 2
     
-    right_column_center_x = int(c_width - (c_width - qr_target_dim) / 1.85)
-    text_wrap_limit = int(26 * (c_width / 1200))
+    # Define Right Column Boundary Space
+    right_column_start_x = qr_x_origin + qr_target_dim + int(c_width * 0.05)
+    right_column_width = c_width - right_column_start_x - int(c_width * 0.05)
+    right_column_center_x = right_column_start_x + (right_column_width // 2)
+    
+    # Calculate Dynamic Wrap Limits based on available horizontal real-estate
+    text_wrap_limit = max(24, int(right_column_width / (base_f_size * 0.55)))
 
+    # 2. Font Loading Engine
     try:
         font_header = ImageFont.truetype("arialbd.ttf", base_f_size)
-        font_metadata = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.80))
-        font_meta_bold = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.85))
+        font_metadata = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.72))
+        font_meta_bold = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.78))
     except IOError:
         font_header = ImageFont.load_default()
         font_metadata = ImageFont.load_default()
         font_meta_bold = ImageFont.load_default()
 
+    # 3. Render Left Hand Columns Component (QR Code)
     if qr_raw_img:
         qr_clean = qr_raw_img.convert("RGBA").resize((qr_target_dim, qr_target_dim), Image.Resampling.LANCZOS)
         label_canvas.paste(qr_clean, (qr_x_origin, qr_y_origin), qr_clean)
 
-    y_text_cursor = int(c_height * 0.06)
+    # 4. Render Right Hand Column Structural Component Stack
+    # Top Component: Company Name Header Text Block
+    y_text_cursor = int(c_height * 0.12)
     company_lines = textwrap.wrap(str(company_txt).upper(), width=text_wrap_limit)
     
     for line in company_lines:
@@ -191,14 +189,17 @@ def render_blueprint_compliance_label(
         line_w = right - left
         line_h = bottom - top
         draw_interface.text((right_column_center_x - (line_w // 2), y_text_cursor), line, fill=(0, 0, 0), font=font_header)
-        y_text_cursor += line_h + int(base_f_size * 0.25)
+        y_text_cursor += line_h + int(c_height * 0.015)
 
+    # Middle Component: Center Anchored Certification Scheme Logo
+    logo_target_dim = int(c_height * 0.36)
+    logo_y_pos = int(c_height * 0.32)
     if logo_raw_img:
         logo_clean = logo_raw_img.convert("RGBA").resize((logo_target_dim, logo_target_dim), Image.Resampling.LANCZOS)
-        logo_y_pos = int(c_height * 0.28)
         logo_x_pos = right_column_center_x - (logo_target_dim // 2)
         label_canvas.paste(logo_clean, (logo_x_pos, logo_y_pos), logo_clean)
 
+    # Bottom Component: Metadata Structural Block Stack
     meta_stack_collection = []
     if product_txt and str(product_txt).lower() != 'nan':
         meta_stack_collection.append((str(product_txt).upper(), font_meta_bold))
@@ -220,7 +221,7 @@ def render_blueprint_compliance_label(
             item_w = right - left
             item_h = bottom - top
             draw_interface.text((right_column_center_x - (item_w // 2), y_text_cursor), info_string, fill=(0, 0, 0), font=font_style)
-            y_text_cursor += item_h + int(base_f_size * 0.25)
+            y_text_cursor += item_h + int(c_height * 0.012)
 
     return label_canvas
 
@@ -296,8 +297,8 @@ st.markdown("<div class='sub-title'>High-Level Official Verification Console & M
 
 st.sidebar.markdown("### 🎛️ Geometric Canvas Controllers")
 ui_width = st.sidebar.slider("Label Output Pixel Width", 800, 2400, 1200, step=100)
-ui_height = st.sidebar.slider("Label Output Pixel Height", 500, 1500, 800, step=100)
-ui_font_sz = st.sidebar.slider("Base Label Font Size", 16, 60, 36, step=2)
+ui_height = st.sidebar.slider("Label Output Pixel Height", 500, 1500, 680, step=20)
+ui_font_sz = st.sidebar.slider("Base Label Font Size", 16, 60, 34, step=2)
 
 st.sidebar.markdown("---")
 ui_disk_path = st.sidebar.text_input("Local Output Directory Target Path", value="output/esm_labels/")
@@ -310,10 +311,10 @@ with tab_sandbox:
     st.markdown("<div class='shaded-header-panel'>Isolated Layout Vector Verification</div>", unsafe_allow_html=True)
     box_c1, box_c2 = st.columns(2)
     with box_c1:
-        sb_company = st.text_input("Corporate Identifier Line", "EMEBET COMMERCIAL BEE KEEPING PLC")
-        sb_product = st.text_input("Product Designation Line", "HONEY")
-        sb_standard = st.text_input("Regulatory Protocol Tracking Code", "ES 6843:2026")
-        sb_client = st.text_input("Registered Enterprise Entity Reference", "EAS-C-0091")
+        sb_company = st.text_input("Corporate Identifier Line", "CASTEL WINERY PLC")
+        sb_product = st.text_input("Product Designation Line", "ACACIA MEDIUM SWEET RED WINE")
+        sb_standard = st.text_input("Regulatory Protocol Tracking Code", "CES 71:2021")
+        sb_client = st.text_input("Registered Enterprise Entity Reference", "ESML-CAMSRW-CA401548")
     with box_c2:
         sb_logo_upload = st.file_uploader("Upload National Certificate Logo Symbol Image", type=["png", "jpg", "jpeg"], key="sb_logo")
         sb_qr_upload = st.file_uploader("Upload Targeted Asset Matrix QR Reference", type=["png", "jpg", "jpeg"], key="sb_qr")
