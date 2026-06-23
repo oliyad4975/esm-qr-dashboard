@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION
+# STYLING & VIEWPORT CONFIGURATION (LIGHT BLUE BACKGROUND UPDATE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -23,7 +23,18 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    /* Styled Header Banner Box Architecture matching your reference matrix */
+    /* 1. Main Dashboard Background Canvas forced to Light Corporate Blue */
+    [data-testid="stAppViewContainer"] {
+        background-color: #E0F2FE !important;
+    }
+    
+    /* Ensure the tab navigation panels blend smoothly with the background */
+    [data-testid="stTab"] {
+        background-color: transparent !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 2. Styled Header Banner Box Architecture matching your reference matrix */
     .main-title-container { 
         background-color: #0000FF !important; /* Pure corporate high-contrast blue */
         padding: 1.5rem !important;
@@ -31,6 +42,7 @@ st.markdown("""
         text-align: center !important;
         margin-bottom: 2rem !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
     .title-line-primary {
         font-size: 3.2rem !important; 
@@ -50,11 +62,20 @@ st.markdown("""
         letter-spacing: 0.02rem !important;
     }
     
-    /* Global Widget Labels Forced to 14px and Bold Font Size */
+    /* 3. Global Widget Labels Forced to 14px and Bold Font Size */
     [data-testid="stWidgetLabel"] p {
         font-size: 14px !important;
         font-weight: bold !important;
         color: #1F2937 !important;
+    }
+    
+    /* Context Info Text styling for dark visibility over light blue */
+    .sub-title { 
+        font-size: 1.1rem !important; 
+        color: #1E3A8A !important; 
+        font-weight: 500;
+        margin-bottom: 2rem; 
+        text-align: center; 
     }
     
     .success-panel { border-radius: 8px; padding: 1.5rem; background-color: #F0FDF4; border-left: 6px solid #16A34A; margin-top: 1.5rem; }
@@ -254,7 +275,6 @@ with tab_production:
         accept_multiple_files=True
     )
 
-    # Initialize Persistent Session Memory States
     if "zip_stream_bytes" not in st.session_state:
         st.session_state.zip_stream_bytes = None
     if "pdf_stream_bytes" not in st.session_state:
@@ -297,11 +317,9 @@ with tab_production:
                     total_work_items = len(scrubbed_dataframe)
                     st.session_state.total_compiled = 0
 
-                    # Prepare Memory Streams for Output Assemblies
                     compressed_binary_stream = io.BytesIO()
                     pdf_binary_stream = io.BytesIO()
                     
-                    # Initialize ReportLab PDF Canvas Context (Standard Letter Format)
                     pdf_canvas = canvas.Canvas(pdf_binary_stream, pagesize=letter)
                     page_w, page_h = letter
 
@@ -334,7 +352,6 @@ with tab_production:
                             if matched_asset_pointer:
                                 loaded_qr_obj = Image.open(matched_asset_pointer)
 
-                                # Render Master Image Array Label
                                 final_compiled_vector = render_blueprint_compliance_label(
                                     loaded_qr_obj, loaded_logo_obj,
                                     val_company, val_product, val_standard, val_client,
@@ -344,19 +361,15 @@ with tab_production:
                                 sanitized_id = val_client.replace('/', '_').replace('\\', '_') if val_client and val_client.lower() != 'nan' else f"Row_{row_idx}"
                                 export_file_name = f"Label_{sanitized_id}.jpg"
                                 
-                                # Save to Local Storage Path Target
                                 final_compiled_vector.save(os.path.join(ui_disk_path, export_file_name), "JPEG", quality=95)
 
-                                # Package into Memory Buffer for ZIP payload
                                 internal_img_ram_buffer = io.BytesIO()
                                 final_compiled_vector.save(internal_img_ram_buffer, format="JPEG", quality=95)
                                 zip_envelope.writestr(export_file_name, internal_img_ram_buffer.getvalue())
 
-                                # Dynamic PDF Placement Matrix (1 Label Per Page for Clean Cutting)
                                 internal_img_ram_buffer.seek(0)
                                 pdf_image = Image.open(internal_img_ram_buffer)
                                 
-                                # Scale label proportionally to safely fit a Letter size page grid
                                 scale_factor = min((page_w - 54) / pdf_image.width, (page_h - 54) / pdf_image.height)
                                 draw_w = pdf_image.width * scale_factor
                                 draw_h = pdf_image.height * scale_factor
@@ -374,7 +387,6 @@ with tab_production:
 
                             batch_progressbar.progress((row_idx + 1) / total_work_items)
 
-                    # Wrap Up Pipeline Generation
                     pdf_canvas.save()
                     batch_status_card.empty()
                     
