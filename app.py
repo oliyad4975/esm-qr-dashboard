@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (BLACK-TO-BLUE TAB ENGINE)
+# STYLING & VIEWPORT CONFIGURATION (COMPREHENSIVE BLACK-TO-BLUE TAB ENGINE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -28,14 +28,14 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. Strict Black-to-Blue Tab State Transition Engine */
+    /* 2. Overriding the Tab Bar Container Layer */
     div[data-testid="stTabBar"] {
         background-color: transparent !important;
         border-bottom: 2px solid #0000FF !important; /* Grounding blue indicator line */
         padding-bottom: 4px !important;
     }
     
-    /* Target all tab buttons globally - INITIAL STATE (INACTIVE BLACK) */
+    /* 3. INITIAL STATE: Force Inactive Tabs to Sharp, High-Visibility Solid Black */
     div[data-testid="stTabBar"] button,
     div[data-testid="stTabBar"] [data-baseweb="tab"] {
         background-color: transparent !important;
@@ -45,38 +45,44 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Force deep child selectors to render in bold Black initially */
+    /* Target every possible text element inside the inactive tab to banish white text */
     div[data-testid="stTabBar"] button p,
     div[data-testid="stTabBar"] [data-baseweb="tab"] p,
     div[data-testid="stTabBar"] button div,
-    div[data-testid="stTabBar"] [data-baseweb="tab"] div {
-        color: #000000 !important; /* Sharp High-Visibility Inactive Black */
-        font-weight: bold !important;
+    div[data-testid="stTabBar"] [data-baseweb="tab"] div,
+    div[data-testid="stTabBar"] button span,
+    div[data-testid="stTabBar"] [data-baseweb="tab"] span {
+        color: #000000 !important; /* Absolute Solid Black for maximum contrast against light blue */
+        font-weight: 700 !important; /* Extra bold weighting for senior-level review */
         font-size: 16px !important;
     }
     
-    /* Hover state adjustment */
+    /* Subtle color adjustment on hover to guide interaction */
     div[data-testid="stTabBar"] button:hover p,
-    div[data-testid="stTabBar"] [data-baseweb="tab"]:hover p {
+    div[data-testid="stTabBar"] [data-baseweb="tab"]:hover p,
+    div[data-testid="stTabBar"] button:hover span,
+    div[data-testid="stTabBar"] [data-baseweb="tab"]:hover span {
         color: #1D4ED8 !important;
     }
     
-    /* ACTIVE STATE OVERRIDE (WHEN CLICKED -> CORPORATE BLUE) */
+    /* 4. ACTIVE STATE OVERRIDE: Shift to Corporate Blue Upon Click Interaction */
     div[data-testid="stTabBar"] button[aria-selected="true"],
     div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] {
         background-color: transparent !important;
-        border-bottom: 4px solid #0000FF !important; /* Pure corporate blue bottom underline */
+        border-bottom: 4px solid #0000FF !important; /* Pure corporate blue bottom underline accent */
     }
     
     div[data-testid="stTabBar"] button[aria-selected="true"] p,
     div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] p,
     div[data-testid="stTabBar"] button[aria-selected="true"] div,
-    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] div {
-        color: #0000FF !important; /* Deep Corporate Blue text presentation */
-        font-weight: bold !important;
+    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] div,
+    div[data-testid="stTabBar"] button[aria-selected="true"] span,
+    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] span {
+        color: #0000FF !important; /* Vivid Corporate Blue text presentation for the active view */
+        font-weight: 700 !important;
     }
 
-    /* 3. Shaded Heading Panel (Automated Execution Configuration Room) */
+    /* 5. Shaded Heading Panel (Automated Execution Configuration Room) */
     .shaded-header-panel {
         background-color: #1E40AF !important; 
         color: #FFFFFF !important;            
@@ -90,7 +96,7 @@ st.markdown("""
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
     }
     
-    /* 4. Styled Header Banner Box Architecture */
+    /* 6. Styled Header Banner Box Architecture */
     .main-title-container { 
         background-color: #0000FF !important; 
         padding: 1.5rem !important;
