@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (COMPLETE TAB BUTTON SHADING OVERRIDES)
+# STYLING & VIEWPORT CONFIGURATION (DYNAMIC RED-TO-BLUE TAB ENGINE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -28,51 +28,49 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. Comprehensive Tab Row and Container Shading Overrides */
+    /* 2. Dynamic Tab State Transition Engine */
     div[data-testid="stTabBar"] {
         background-color: transparent !important;
-        padding: 0.5rem 0 !important;
+        border-bottom: 2px solid #B91C1C !important; /* Grounding line matching the red theme */
+        padding-bottom: 2px !important;
     }
     
-    /* Targets the individual Tab buttons specifically */
-    div[data-testid="stTabBar"] button, 
-    div[data-testid="stTabBar"] [data-baseweb="tab"] {
-        background-color: #1E40AF !important; /* Solid corporate blue shading */
-        color: #FFFFFF !important;            /* High-contrast crisp white text */
-        font-weight: bold !important;
-        font-size: 15px !important;
-        border-radius: 6px !important;
+    /* Target all tab buttons globally - INITIAL STATE (RED) */
+    div[data-testid="stTabBar"] button {
+        background-color: transparent !important;
+        border: none !important;
         padding: 0.6rem 1.2rem !important;
-        margin-right: 0.75rem !important;
-        border: 1px solid #1D4ED8 !important;
-        transition: all 0.2s ease-in-out;
+        margin-right: 0.5rem !important;
+        transition: all 0.2s ease-in-out !important;
     }
-    
-    /* Enforces high-contrast white text color even during hover interactions */
-    div[data-testid="stTabBar"] button:hover {
-        background-color: #1D4ED8 !important;
-        color: #FFFFFF !important;
-    }
-    
-    /* Active / Selected Tab State Accentuation */
-    div[data-testid="stTabBar"] button[aria-selected="true"],
-    div[data-testid="stTabBar"] [aria-selected="true"] {
-        background-color: #0000FF !important; /* Vivid active accent blue */
-        color: #FFFFFF !important;            /* Retain white text visibility */
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2) !important;
-        border: 1px solid #0000D9 !important;
-    }
-    
-    /* Overrides internal block text inheritance to force white presentation */
+
+    /* Force text color to bold Red initially */
     div[data-testid="stTabBar"] button p {
-        color: #FFFFFF !important;
+        color: #DC2626 !important; /* Crisp high-visibility red */
+        font-weight: bold !important;
+        font-size: 16px !important;
+    }
+    
+    /* Hover state mitigation */
+    div[data-testid="stTabBar"] button:hover p {
+        color: #B91C1C !important;
+    }
+    
+    /* ACTIVE STATE OVERRIDE (WHEN CLICKED -> BLUE) */
+    div[data-testid="stTabBar"] button[aria-selected="true"] {
+        background-color: transparent !important;
+        border-bottom: 4px solid #0000FF !important; /* Pure corporate blue indicator */
+    }
+    
+    div[data-testid="stTabBar"] button[aria-selected="true"] p {
+        color: #0000FF !important; /* Pure corporate blue text color upon selection */
         font-weight: bold !important;
     }
 
     /* 3. Shaded Heading Panel (Automated Execution Configuration Room) */
     .shaded-header-panel {
-        background-color: #1E40AF !important; /* Solid corporate blue shading */
-        color: #FFFFFF !important;            /* High-contrast crisp white text */
+        background-color: #1E40AF !important; 
+        color: #FFFFFF !important;            
         font-size: 1.8rem !important;
         font-weight: bold !important;
         padding: 0.75rem 1.5rem !important;
@@ -281,7 +279,7 @@ ui_font_sz = st.sidebar.slider("Base Label Font Size", 16, 60, 36, step=2)
 st.sidebar.markdown("---")
 ui_disk_path = st.sidebar.text_input("Local Output Directory Target Path", value="output/esm_labels/")
 
-# Shaded Tab Interfaces generated natively via advanced CSS injector block above
+# Shaded Tab Interfaces generated natively via advanced CSS dynamic injector block above
 tab_production, tab_sandbox = st.tabs(["🚀 Automated Pipeline Room", "🔍 Live Vector Structural Sandbox"])
 
 # 1. LIVE SANDBOX CALIBRATION TAB
