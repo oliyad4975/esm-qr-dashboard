@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (DYNAMIC RED-TO-BLUE TAB ENGINE)
+# STYLING & VIEWPORT CONFIGURATION (STRICT RED-TO-BLUE TAB ENGINE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -28,15 +28,16 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. Dynamic Tab State Transition Engine */
+    /* 2. Strict Red-to-Blue Tab State Transition Engine */
     div[data-testid="stTabBar"] {
         background-color: transparent !important;
-        border-bottom: 2px solid #B91C1C !important; /* Grounding line matching the red theme */
-        padding-bottom: 2px !important;
+        border-bottom: 2px solid #E0F2FE !important;
+        padding-bottom: 4px !important;
     }
     
-    /* Target all tab buttons globally - INITIAL STATE (RED) */
-    div[data-testid="stTabBar"] button {
+    /* Target all tab buttons globally - INITIAL STATE (INACTIVE CORPORATE RED) */
+    div[data-testid="stTabBar"] button,
+    div[data-testid="stTabBar"] [data-baseweb="tab"] {
         background-color: transparent !important;
         border: none !important;
         padding: 0.6rem 1.2rem !important;
@@ -44,26 +45,34 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Force text color to bold Red initially */
-    div[data-testid="stTabBar"] button p {
-        color: #DC2626 !important; /* Crisp high-visibility red */
+    /* Force deep child selectors to clear browser cache and template native themes */
+    div[data-testid="stTabBar"] button p,
+    div[data-testid="stTabBar"] [data-baseweb="tab"] p,
+    div[data-testid="stTabBar"] button div,
+    div[data-testid="stTabBar"] [data-baseweb="tab"] div {
+        color: #DC2626 !important; /* Sharp High-Visibility Corporate Red */
         font-weight: bold !important;
         font-size: 16px !important;
     }
     
-    /* Hover state mitigation */
-    div[data-testid="stTabBar"] button:hover p {
+    /* Hover state performance adjustment */
+    div[data-testid="stTabBar"] button:hover p,
+    div[data-testid="stTabBar"] [data-baseweb="tab"]:hover p {
         color: #B91C1C !important;
     }
     
-    /* ACTIVE STATE OVERRIDE (WHEN CLICKED -> BLUE) */
-    div[data-testid="stTabBar"] button[aria-selected="true"] {
+    /* ACTIVE STATE OVERRIDE (WHEN CLICKED -> CORPORATE BLUE) */
+    div[data-testid="stTabBar"] button[aria-selected="true"],
+    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] {
         background-color: transparent !important;
-        border-bottom: 4px solid #0000FF !important; /* Pure corporate blue indicator */
+        border-bottom: 4px solid #0000FF !important; /* Pure corporate blue bottom underline */
     }
     
-    div[data-testid="stTabBar"] button[aria-selected="true"] p {
-        color: #0000FF !important; /* Pure corporate blue text color upon selection */
+    div[data-testid="stTabBar"] button[aria-selected="true"] p,
+    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] p,
+    div[data-testid="stTabBar"] button[aria-selected="true"] div,
+    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] div {
+        color: #0000FF !important; /* Deep Corporate Blue text presentation */
         font-weight: bold !important;
     }
 
