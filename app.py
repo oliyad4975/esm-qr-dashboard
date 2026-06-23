@@ -7,6 +7,10 @@ import pandas as pd
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 
+# Import ReportLab Engines for crisp PDF generation
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
 # -------------------------------------------------------------------------
 # STYLING & VIEWPORT CONFIGURATION
 # -------------------------------------------------------------------------
@@ -58,15 +62,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# DUAL-COLUMN GRAPHIC RENDER ENGINE (PIC 1 ARCHITECTURE)
+# DUAL-COLUMN GRAPHIC RENDER ENGINE
 # -------------------------------------------------------------------------
 def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
-    """Compiles high-resolution assets into a structured dual-column compliance card
-
-    following the structural blueprint matrix (Left: QR | Right: Info Stack).
-    """
+    """Compiles high-resolution assets into a structured dual-column compliance card."""
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
@@ -192,7 +193,7 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
     return final_df, resolved_schema
 
 # -------------------------------------------------------------------------
-# INTERFACE CONTROL DECK (EXACT STRUCTURAL RENDER MATCH)
+# INTERFACE CONTROL DECK
 # -------------------------------------------------------------------------
 st.markdown("""
     <div class='main-title-container'>
@@ -200,6 +201,8 @@ st.markdown("""
         <div class='title-line-secondary'>Unique Client Batch ID Generator</div>
     </div>
 """, unsafe_allow_html=True)
+
+st.markdown("<div class='sub-title'>High-Level Official Verification Console & Multi-Field Graphic Assembly Line</div>", unsafe_allow_html=True)
 
 st.sidebar.markdown("### 🎛️ Geometric Canvas Controllers")
 ui_width = st.sidebar.slider("Label Output Pixel Width", 800, 2400, 1200, step=100)
@@ -251,8 +254,11 @@ with tab_production:
         accept_multiple_files=True
     )
 
+    # Initialize Persistent Session Memory States
     if "zip_stream_bytes" not in st.session_state:
         st.session_state.zip_stream_bytes = None
+    if "pdf_stream_bytes" not in st.session_state:
+        st.session_state.pdf_stream_bytes = None
     if "is_process_clean" not in st.session_state:
         st.session_state.is_process_clean = False
     if "total_compiled" not in st.session_state:
@@ -291,7 +297,13 @@ with tab_production:
                     total_work_items = len(scrubbed_dataframe)
                     st.session_state.total_compiled = 0
 
+                    # Prepare Memory Streams for Output Assemblies
                     compressed_binary_stream = io.BytesIO()
+                    pdf_binary_stream = io.BytesIO()
+                    
+                    # Initialize ReportLab PDF Canvas Context (Standard Letter Format)
+                    pdf_canvas = canvas.Canvas(pdf_binary_stream, pagesize=letter)
+                    page_w, page_h = letter
 
                     with zipfile.ZipFile(compressed_binary_stream, "w", zipfile.ZIP_DEFLATED) as zip_envelope:
                         for row_idx, row_values in scrubbed_dataframe.iterrows():
@@ -322,6 +334,7 @@ with tab_production:
                             if matched_asset_pointer:
                                 loaded_qr_obj = Image.open(matched_asset_pointer)
 
+                                # Render Master Image Array Label
                                 final_compiled_vector = render_blueprint_compliance_label(
                                     loaded_qr_obj, loaded_logo_obj,
                                     val_company, val_product, val_standard, val_client,
@@ -331,39 +344,81 @@ with tab_production:
                                 sanitized_id = val_client.replace('/', '_').replace('\\', '_') if val_client and val_client.lower() != 'nan' else f"Row_{row_idx}"
                                 export_file_name = f"Label_{sanitized_id}.jpg"
                                 
+                                # Save to Local Storage Path Target
                                 final_compiled_vector.save(os.path.join(ui_disk_path, export_file_name), "JPEG", quality=95)
 
+                                # Package into Memory Buffer for ZIP payload
                                 internal_img_ram_buffer = io.BytesIO()
                                 final_compiled_vector.save(internal_img_ram_buffer, format="JPEG", quality=95)
                                 zip_envelope.writestr(export_file_name, internal_img_ram_buffer.getvalue())
+
+                                # Dynamic PDF Placement Matrix (1 Label Per Page for Clean Cutting)
+                                internal_img_ram_buffer.seek(0)
+                                pdf_image = Image.open(internal_img_ram_buffer)
+                                
+                                # Scale label proportionally to safely fit a Letter size page grid
+                                scale_factor = min((page_w - 54) / pdf_image.width, (page_h - 54) / pdf_image.height)
+                                draw_w = pdf_image.width * scale_factor
+                                draw_h = pdf_image.height * scale_factor
+                                x_offset = (page_w - draw_w) / 2
+                                y_offset = (page_h - draw_h) / 2
+
+                                pdf_canvas.drawImage(
+                                    internal_img_ram_buffer, 
+                                    x_offset, y_offset, 
+                                    width=draw_w, height=draw_h
+                                )
+                                pdf_canvas.showPage()
 
                                 st.session_state.total_compiled += 1
 
                             batch_progressbar.progress((row_idx + 1) / total_work_items)
 
+                    # Wrap Up Pipeline Generation
+                    pdf_canvas.save()
                     batch_status_card.empty()
+                    
                     compressed_binary_stream.seek(0)
+                    pdf_binary_stream.seek(0)
+                    
                     st.session_state.zip_stream_bytes = compressed_binary_stream.getvalue()
+                    st.session_state.pdf_stream_bytes = pdf_binary_stream.getvalue()
                     st.session_state.is_process_clean = True
 
             except Exception as system_pipeline_fault:
                 st.error(f"Critical Runtime Exception Error: {str(system_pipeline_fault)}")
 
+    # -------------------------------------------------------------------------
+    # DUAL-FORMAT DOWNLOAD CONSOLE DECK
+    # -------------------------------------------------------------------------
     if st.session_state.is_process_clean and st.session_state.zip_stream_bytes:
         st.markdown(
             f"""
             <div class='success-panel'>
                 <h4 style='color: #15A34A; margin-top: 0;'>✅ Automated Multi-Field Pipeline Generation Complete</h4>
-                <p style='color: #1F2937; margin-bottom: 0;'>Processed and compiled <b>{st.session_state.total_compiled}</b> labels.</p>
+                <p style='color: #1F2937; margin-bottom: 0;'>Processed and compiled <b>{st.session_state.total_compiled}</b> compliance card assets.</p>
             </div>
         """,
             unsafe_allow_html=True,
         )
-
-        st.download_button(
-            label="📥 DOWNLOAD ALL LABELS AS COMPRESSED ARCHIVE (ZIP)",
-            data=st.session_state.zip_stream_bytes,
-            file_name="dsm_batch_labels.zip",
-            mime="application/zip",
-            use_container_width=True
-        )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        dl_col1, dl_col2 = st.columns(2)
+        
+        with dl_col1:
+            st.download_button(
+                label="📥 DOWNLOAD ALL LABELS AS COMPRESSED ARCHIVE (ZIP)",
+                data=st.session_state.zip_stream_bytes,
+                file_name="dsm_batch_labels.zip",
+                mime="application/zip",
+                use_container_width=True
+            )
+            
+        with dl_col2:
+            st.download_button(
+                label="📄 DOWNLOAD ALL LABELS AS COMPILED REGISTER (PDF)",
+                data=st.session_state.pdf_stream_bytes,
+                file_name="dsm_batch_register.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
