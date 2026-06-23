@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 # STYLING & VIEWPORT CONFIGURATION
 # -------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Unique Client Digital Standards Mark (DSM) Batch ID Generator",
+    page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
     page_icon="🇪🇹",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -19,21 +19,34 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    /* 1. Styled Header Banner: White text over blue background */
-    .main-title { 
-        font-size: 2.6rem !important; 
-        color: #FFFFFF !important; 
-        background-color: #1E40AF !important; 
-        font-weight: 800; 
-        letter-spacing: -0.05rem;
+    /* Styled Header Banner Box Architecture matching your reference matrix */
+    .main-title-container { 
+        background-color: #0000FF !important; /* Pure corporate high-contrast blue */
         padding: 1.5rem !important;
-        border-radius: 8px !important;
+        border-radius: 4px !important;
         text-align: center !important;
-        margin-bottom: 1rem !important;
+        margin-bottom: 2rem !important;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
     }
-    .sub-title { font-size: 1.1rem !important; color: #4B5563; margin-bottom: 2rem; text-align: center; }
+    .title-line-primary {
+        font-size: 3.2rem !important; 
+        color: #FFFFFF !important; 
+        font-weight: 700 !important; 
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0.05rem !important;
+    }
+    .title-line-secondary {
+        font-size: 2.1rem !important; 
+        color: #FFFFFF !important; 
+        font-weight: 500 !important; 
+        margin: 0.4rem 0 0 0 !important;
+        padding: 0 !important;
+        letter-spacing: 0.02rem !important;
+    }
     
-    /* 2. Global Widget Labels Forced to 14px and Bold Font Size */
+    /* Global Widget Labels Forced to 14px and Bold Font Size */
     [data-testid="stWidgetLabel"] p {
         font-size: 14px !important;
         font-weight: bold !important;
@@ -179,10 +192,14 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
     return final_df, resolved_schema
 
 # -------------------------------------------------------------------------
-# INTERFACE CONTROL DECK
+# INTERFACE CONTROL DECK (EXACT STRUCTURAL RENDER MATCH)
 # -------------------------------------------------------------------------
-st.markdown("<div class='main-title'>Unique Client Digital Standards Mark (DSM) Batch ID Generator</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>High-Level Official Verification Console & Multi-Field Graphic Assembly Line</div>", unsafe_allow_html=True)
+st.markdown("""
+    <div class='main-title-container'>
+        <div class='title-line-primary'>Digital Standards Mark (DSM)</div>
+        <div class='title-line-secondary'>Unique Client Batch ID Generator</div>
+    </div>
+""", unsafe_allow_html=True)
 
 st.sidebar.markdown("### 🎛️ Geometric Canvas Controllers")
 ui_width = st.sidebar.slider("Label Output Pixel Width", 800, 2400, 1200, step=100)
@@ -337,7 +354,7 @@ with tab_production:
             f"""
             <div class='success-panel'>
                 <h4 style='color: #15A34A; margin-top: 0;'>✅ Automated Multi-Field Pipeline Generation Complete</h4>
-                <p style='color: #1F2937; margin-bottom: 0;'>Processed and compiled <b>{st.session_state.total_compiled}</b> labels directly into: <code>{ui_disk_path}</code></p>
+                <p style='color: #1F2937; margin-bottom: 0;'>Processed and compiled <b>{st.session_state.total_compiled}</b> labels.</p>
             </div>
         """,
             unsafe_allow_html=True,
@@ -346,7 +363,7 @@ with tab_production:
         st.download_button(
             label="📥 DOWNLOAD ALL LABELS AS COMPRESSED ARCHIVE (ZIP)",
             data=st.session_state.zip_stream_bytes,
-            file_name="esm_batch_labels.zip",
+            file_name="dsm_batch_labels.zip",
             mime="application/zip",
             use_container_width=True
         )
