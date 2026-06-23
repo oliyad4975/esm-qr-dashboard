@@ -7,9 +7,10 @@ import pandas as pd
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 
-# Import ReportLab Engines for crisp PDF generation
+# Import ReportLab Engines for crisp PDF generation and in-memory image streaming
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader  # <-- Added to handle in-memory buffer conversion safely
 
 # -------------------------------------------------------------------------
 # STYLING & VIEWPORT CONFIGURATION (ABSOLUTE DOM TARGETING TAB ENGINE)
@@ -147,7 +148,6 @@ def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
     """Compiles high-resolution assets into a structured dual-column compliance card matching the 'Good' layout symmetry exactly."""
-    # Create pure white baseline canvas
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
@@ -232,7 +232,6 @@ def clean_token(val):
     return re.sub(r'[^a-z0-9]', '', str(val).lower().strip())
 
 def parse_and_validate_excel_adaptive(workbook_buffer):
-    """Deep scans rows of the uploaded file to locate the correct metadata starting grid."""
     raw_df = pd.read_excel(workbook_buffer, header=None)
     
     target_keywords = {"companyname", "company", "producttype", "product", "clientcode", "standardrno", "qrfilename"}
@@ -438,17 +437,18 @@ with tab_production:
                                 final_compiled_vector.save(internal_img_ram_buffer, format="JPEG", quality=95)
                                 zip_envelope.writestr(export_file_name, internal_img_ram_buffer.getvalue())
 
+                                # FIX: Convert the byte-stream to ReportLab ImageReader format to circumvent OS path exception
                                 internal_img_ram_buffer.seek(0)
-                                pdf_image = Image.open(internal_img_ram_buffer)
+                                wrapped_pdf_image = ImageReader(internal_img_ram_buffer)
                                 
-                                scale_factor = min((page_w - 54) / pdf_image.width, (page_h - 54) / pdf_image.height)
-                                draw_w = pdf_image.width * scale_factor
-                                draw_h = pdf_image.height * scale_factor
+                                scale_factor = min((page_w - 54) / final_compiled_vector.width, (page_h - 54) / final_compiled_vector.height)
+                                draw_w = final_compiled_vector.width * scale_factor
+                                draw_h = final_compiled_vector.height * scale_factor
                                 x_offset = (page_w - draw_w) / 2
                                 y_offset = (page_h - draw_h) / 2
 
                                 pdf_canvas.drawImage(
-                                    internal_img_ram_buffer, 
+                                    wrapped_pdf_image, 
                                     x_offset, y_offset, 
                                     width=draw_w, height=draw_h
                                 )
