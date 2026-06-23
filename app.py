@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (LIGHT BLUE BACKGROUND UPDATE)
+# STYLING & VIEWPORT CONFIGURATION (LIGHT BLUE BACKGROUND & SHADED TEXTS)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -23,20 +23,46 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    /* 1. Main Dashboard Background Canvas forced to Light Corporate Blue */
+    /* 1. Main Dashboard Background Canvas */
     [data-testid="stAppViewContainer"] {
         background-color: #E0F2FE !important;
     }
     
-    /* Ensure the tab navigation panels blend smoothly with the background */
-    [data-testid="stTab"] {
-        background-color: transparent !important;
-        font-weight: 600 !important;
+    /* 2. Shaded Tabs Architecture (Automated Pipeline Room & Sandbox) */
+    div[data-testid="stTabBar"] button {
+        background-color: #1E40AF !important; /* Solid corporate blue shading */
+        color: #FFFFFF !important;            /* High-contrast crisp white text */
+        font-weight: bold !important;
+        font-size: 14px !important;
+        border-radius: 4px !important;
+        padding: 0.5rem 1rem !important;
+        margin-right: 0.5rem !important;
+        border: none !important;
     }
     
-    /* 2. Styled Header Banner Box Architecture matching your reference matrix */
+    /* Active/Selected Tab State */
+    div[data-testid="stTabBar"] button[aria-selected="true"] {
+        background-color: #0000FF !important; /* Brighter blue accent for active state */
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* 3. Shaded Heading Panel (Automated Execution Configuration Room) */
+    .shaded-header-panel {
+        background-color: #1E40AF !important; /* Solid corporate blue shading */
+        color: #FFFFFF !important;            /* High-contrast crisp white text */
+        font-size: 1.8rem !important;
+        font-weight: bold !important;
+        padding: 0.75rem 1.5rem !important;
+        border-radius: 4px !important;
+        margin-top: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        display: inline-block !important;      /* Wrap exactly around text scale */
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* 4. Styled Header Banner Box Architecture */
     .main-title-container { 
-        background-color: #0000FF !important; /* Pure corporate high-contrast blue */
+        background-color: #0000FF !important; 
         padding: 1.5rem !important;
         border-radius: 4px !important;
         text-align: center !important;
@@ -62,14 +88,13 @@ st.markdown("""
         letter-spacing: 0.02rem !important;
     }
     
-    /* 3. Global Widget Labels Forced to 14px and Bold Font Size */
+    /* Global Widget Labels Forced to 14px and Bold Font Size */
     [data-testid="stWidgetLabel"] p {
         font-size: 14px !important;
         font-weight: bold !important;
         color: #1F2937 !important;
     }
     
-    /* Context Info Text styling for dark visibility over light blue */
     .sub-title { 
         font-size: 1.1rem !important; 
         color: #1E3A8A !important; 
@@ -233,11 +258,12 @@ ui_font_sz = st.sidebar.slider("Base Label Font Size", 16, 60, 36, step=2)
 st.sidebar.markdown("---")
 ui_disk_path = st.sidebar.text_input("Local Output Directory Target Path", value="output/esm_labels/")
 
+# Shaded Tab Interfaces generated natively via CSS inject above
 tab_production, tab_sandbox = st.tabs(["🚀 Automated Pipeline Room", "🔍 Live Vector Structural Sandbox"])
 
 # 1. LIVE SANDBOX CALIBRATION TAB
 with tab_sandbox:
-    st.subheader("Isolated Layout Vector Verification")
+    st.markdown("<div class='shaded-header-panel'>Isolated Layout Vector Verification</div>", unsafe_allow_html=True)
     box_c1, box_c2 = st.columns(2)
     with box_c1:
         sb_company = st.text_input("Corporate Identifier Line", "EMEBET COMMERCIAL BEE KEEPING PLC")
@@ -261,7 +287,8 @@ with tab_sandbox:
 
 # 2. RUNTIME AUTOMATION PIPELINE ROOM
 with tab_production:
-    st.subheader("Automated Execution Configuration Room")
+    # High-contrast shaded heading block matching the exact specification image 
+    st.markdown("<div class='shaded-header-panel'>Automated Execution Configuration Room</div>", unsafe_allow_html=True)
     
     u_col1, u_col2 = st.columns(2)
     with u_col1:
