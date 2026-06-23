@@ -8,10 +8,10 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (UPDATED VISUAL MATRIX)
+# STYLING & VIEWPORT CONFIGURATION
 # -------------------------------------------------------------------------
 st.set_page_config(
-    page_title="National Standards Mark Batch Production Engine",
+    page_title="Unique Client Digital Standards Mark (DSM) Batch ID Generator",
     page_icon="🇪🇹",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -127,10 +127,7 @@ def clean_token(val):
     return re.sub(r'[^a-z0-9]', '', str(val).lower().strip())
 
 def parse_and_validate_excel_adaptive(workbook_buffer):
-    """Deep scans rows of the uploaded file to locate the correct metadata starting grid
-
-    even if template rows block the top of the worksheet sheet.
-    """
+    """Deep scans rows of the uploaded file to locate the correct metadata starting grid."""
     raw_df = pd.read_excel(workbook_buffer, header=None)
     
     target_keywords = {"companyname", "company", "producttype", "product", "clientcode", "standardrno", "qrfilename"}
@@ -184,7 +181,7 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
 # -------------------------------------------------------------------------
 # INTERFACE CONTROL DECK
 # -------------------------------------------------------------------------
-st.markdown("<div class='main-title'>National Standards Mark (ESM) Batch Engine</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>Unique Client Digital Standards Mark (DSM) Batch ID Generator</div>", unsafe_allow_html=True)
 st.markdown("<div class='sub-title'>High-Level Official Verification Console & Multi-Field Graphic Assembly Line</div>", unsafe_allow_html=True)
 
 st.sidebar.markdown("### 🎛️ Geometric Canvas Controllers")
