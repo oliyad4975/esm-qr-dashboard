@@ -1,34 +1,61 @@
+import streamlit as st
+import pandas as pd
 import os
-from dotenv import load_dotenv
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_migrate import Migrate
-from config import Config
+from datetime import datetime
 
-# Load environment variables from .env file if present
-load_dotenv()
+# Set page configuration for professional presentation
+st.set_page_config(
+    page_title="ESM CAPA Dashboard",
+    page_icon="📊",
+    layout="wide"
+)
 
-app = Flask(__name__)
-app.config.from_object(Config)
+# Application Header
+st.title("📊 ESM CAPA Management Dashboard")
+st.markdown("---")
 
-# Create upload directory if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Helper function to ensure output directories exist
+def ensure_directories():
+    if not os.path.exists("output/esm_labels"):
+        os.makedirs("output/esm_labels")
 
-# Initialize extensions
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-login_manager.login_message_category = 'info'
+# Dashboard Logic
+def main():
+    ensure_directories()
+    
+    # Sidebar Navigation
+    menu = ["Dashboard Overview", "Submit New CAPA", "Audit Logs"]
+    choice = st.sidebar.selectbox("Navigation", menu)
 
-@login_manager.user_loader
-def load_user(user_id):
-    from models import User
-    return User.query.get(int(user_id))
+    if choice == "Dashboard Overview":
+        st.subheader("System Status")
+        # Placeholder for data visualization
+        st.info("Metrics and analytics will be loaded here.")
+        
+    elif choice == "Submit New CAPA":
+        st.subheader("New CAPA Submission")
+        with st.form("capa_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                capa_id = st.text_input("CAPA ID")
+                category = st.selectbox("Category", ["Hardware", "Software", "Process"])
+            with col2:
+                date = st.date_input("Date", datetime.now())
+                priority = st.select_slider("Priority", options=["Low", "Medium", "High"])
+            
+            description = st.text_area("Root Cause Description")
+            submit = st.form_submit_button("Generate Label")
 
-# Import routes AFTER app is created
-import routes
+            if submit:
+                if capa_id:
+                    st.success(f"CAPA {capa_id} submitted successfully!")
+                    # Add logic for file generation here
+                else:
+                    st.error("CAPA ID is required.")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    elif choice == "Audit Logs":
+        st.subheader("System Logs")
+        st.write("Displaying recent activity...")
+
+if __name__ == "__main__":
+    main()
