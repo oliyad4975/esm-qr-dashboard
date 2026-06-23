@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (COMPREHENSIVE BLACK-TO-BLUE TAB ENGINE)
+# STYLING & VIEWPORT CONFIGURATION (BORDERED BUTTON TAB ENGINE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -31,33 +31,40 @@ st.markdown("""
     /* 2. Overriding the Tab Bar Container Layer */
     div[data-testid="stTabBar"] {
         background-color: transparent !important;
-        border-bottom: 2px solid #0000FF !important; /* Grounding blue indicator line */
-        padding-bottom: 4px !important;
+        border-bottom: 2px solid #1E40AF !important; 
+        padding-bottom: 10px !important;
+        gap: 12px !important; /* Space between the bordered buttons */
     }
     
-    /* 3. INITIAL STATE: Force Inactive Tabs to Sharp, High-Visibility Solid Black */
+    /* 3. INITIAL STATE: Force a Distinct Border Box Around Each Text Label */
     div[data-testid="stTabBar"] button,
     div[data-testid="stTabBar"] [data-baseweb="tab"] {
-        background-color: transparent !important;
-        border: none !important;
-        padding: 0.6rem 1.2rem !important;
+        background-color: #FFFFFF !important; /* Crisp white background inside the block */
+        border: 2px solid #000000 !important; /* Solid Black border structure for sharp contrast */
+        border-radius: 6px !important;        /* Clean professional rounding */
+        padding: 0.6rem 1.4rem !important;
         margin-right: 0.5rem !important;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05) !important;
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Target every possible text element inside the inactive tab to banish white text */
+    /* Force all interior labels to clear native theme overrides */
     div[data-testid="stTabBar"] button p,
     div[data-testid="stTabBar"] [data-baseweb="tab"] p,
     div[data-testid="stTabBar"] button div,
     div[data-testid="stTabBar"] [data-baseweb="tab"] div,
     div[data-testid="stTabBar"] button span,
     div[data-testid="stTabBar"] [data-baseweb="tab"] span {
-        color: #000000 !important; /* Absolute Solid Black for maximum contrast against light blue */
-        font-weight: 700 !important; /* Extra bold weighting for senior-level review */
+        color: #000000 !important; /* Bold black text for maximum scannability */
+        font-weight: 700 !important; 
         font-size: 16px !important;
     }
     
-    /* Subtle color adjustment on hover to guide interaction */
+    /* Hover micro-interaction transition */
+    div[data-testid="stTabBar"] button:hover {
+        border-color: #1D4ED8 !important;
+        background-color: #F8FAFC !important;
+    }
     div[data-testid="stTabBar"] button:hover p,
     div[data-testid="stTabBar"] [data-baseweb="tab"]:hover p,
     div[data-testid="stTabBar"] button:hover span,
@@ -65,11 +72,12 @@ st.markdown("""
         color: #1D4ED8 !important;
     }
     
-    /* 4. ACTIVE STATE OVERRIDE: Shift to Corporate Blue Upon Click Interaction */
+    /* 4. ACTIVE STATE OVERRIDE: Shift Border and Typography to Corporate Blue */
     div[data-testid="stTabBar"] button[aria-selected="true"],
     div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] {
-        background-color: transparent !important;
-        border-bottom: 4px solid #0000FF !important; /* Pure corporate blue bottom underline accent */
+        background-color: #EFF6FF !important; /* Light accent blue background fill */
+        border: 2.5px solid #0000FF !important; /* Thick High-Visibility Corporate Blue Border */
+        box-shadow: 0px 4px 6px rgba(0, 0, 255, 0.15) !important;
     }
     
     div[data-testid="stTabBar"] button[aria-selected="true"] p,
@@ -78,7 +86,7 @@ st.markdown("""
     div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] div,
     div[data-testid="stTabBar"] button[aria-selected="true"] span,
     div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] span {
-        color: #0000FF !important; /* Vivid Corporate Blue text presentation for the active view */
+        color: #0000FF !important; /* Vivid Corporate Blue text label */
         font-weight: 700 !important;
     }
 
