@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (BORDERED BUTTON TAB ENGINE)
+# STYLING & VIEWPORT CONFIGURATION (ABSOLUTE DOM TARGETING TAB ENGINE)
 # -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
@@ -28,65 +28,65 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. Overriding the Tab Bar Container Layer */
-    div[data-testid="stTabBar"] {
+    /* 2. UNIVERSAL TAB CONTROLLER: Force absolute scannability across all Streamlit versions */
+    /* Target the base list container */
+    [data-baseweb="tab-list"], 
+    div[data-testid="stTabBar"], 
+    .stTabs [role="tablist"] {
         background-color: transparent !important;
-        border-bottom: 2px solid #1E40AF !important; 
-        padding-bottom: 10px !important;
-        gap: 12px !important; /* Space between the bordered buttons */
+        border-bottom: 3px solid #1E40AF !important; 
+        padding-bottom: 8px !important;
+        gap: 14px !important;
     }
     
-    /* 3. INITIAL STATE: Force a Distinct Border Box Around Each Text Label */
-    div[data-testid="stTabBar"] button,
-    div[data-testid="stTabBar"] [data-baseweb="tab"] {
-        background-color: #FFFFFF !important; /* Crisp white background inside the block */
-        border: 2px solid #000000 !important; /* Solid Black border structure for sharp contrast */
-        border-radius: 6px !important;        /* Clean professional rounding */
-        padding: 0.6rem 1.4rem !important;
-        margin-right: 0.5rem !important;
-        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05) !important;
+    #tabs-bgroup-container {
+        gap: 14px !important;
+    }
+
+    /* 3. INITIAL / INACTIVE STATE: Enforce crisp black text with distinct border boxes */
+    [data-baseweb="tab"], 
+    div[data-testid="stTabBar"] button, 
+    .stTabs [role="tab"] {
+        background-color: #FFFFFF !important;  /* Pure white background for high-contrast visibility */
+        border: 2px solid #000000 !important;  /* Crisp solid black border outline */
+        border-radius: 6px !important;
+        padding: 8px 18px !important;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Force all interior labels to clear native theme overrides */
-    div[data-testid="stTabBar"] button p,
-    div[data-testid="stTabBar"] [data-baseweb="tab"] p,
-    div[data-testid="stTabBar"] button div,
-    div[data-testid="stTabBar"] [data-baseweb="tab"] div,
-    div[data-testid="stTabBar"] button span,
-    div[data-testid="stTabBar"] [data-baseweb="tab"] span {
-        color: #000000 !important; /* Bold black text for maximum scannability */
-        font-weight: 700 !important; 
+    /* Target every possible text element layer deep inside the unselected buttons */
+    [data-baseweb="tab"] p, [data-baseweb="tab"] span, [data-baseweb="tab"] div,
+    div[data-testid="stTabBar"] button p, div[data-testid="stTabBar"] button span, div[data-testid="stTabBar"] button div,
+    .stTabs [role="tab"] p, .stTabs [role="tab"] span, .stTabs [role="tab"] div {
+        color: #000000 !important;             /* Explicitly force text color to deep solid black */
+        font-weight: 700 !important;            /* Extra bold weighting for professional presentation */
         font-size: 16px !important;
+        opacity: 1.0 !important;                /* Strip away any native fainted opacity layers */
     }
     
-    /* Hover micro-interaction transition */
-    div[data-testid="stTabBar"] button:hover {
+    /* Hover micro-interactions */
+    [data-baseweb="tab"]:hover, div[data-testid="stTabBar"] button:hover, .stTabs [role="tab"]:hover {
         border-color: #1D4ED8 !important;
-        background-color: #F8FAFC !important;
-    }
-    div[data-testid="stTabBar"] button:hover p,
-    div[data-testid="stTabBar"] [data-baseweb="tab"]:hover p,
-    div[data-testid="stTabBar"] button:hover span,
-    div[data-testid="stTabBar"] [data-baseweb="tab"]:hover span {
-        color: #1D4ED8 !important;
+        background-color: #F1F5F9 !important;
     }
     
-    /* 4. ACTIVE STATE OVERRIDE: Shift Border and Typography to Corporate Blue */
+    /* 4. ACTIVE STATE OVERRIDE: Shift theme dynamically upon user click selection */
+    [aria-selected="true"], 
+    [data-baseweb="tab"][aria-selected="true"], 
     div[data-testid="stTabBar"] button[aria-selected="true"],
-    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] {
-        background-color: #EFF6FF !important; /* Light accent blue background fill */
-        border: 2.5px solid #0000FF !important; /* Thick High-Visibility Corporate Blue Border */
-        box-shadow: 0px 4px 6px rgba(0, 0, 255, 0.15) !important;
+    .stTabs [role="tab"][aria-selected="true"] {
+        background-color: #EFF6FF !important;  /* Soft corporate blue background tint */
+        border: 2.5px solid #0000FF !important; /* Thick corporate blue structural border block */
+        box-shadow: 0px 4px 8px rgba(0, 0, 255, 0.15) !important;
     }
     
-    div[data-testid="stTabBar"] button[aria-selected="true"] p,
-    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] p,
-    div[data-testid="stTabBar"] button[aria-selected="true"] div,
-    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] div,
-    div[data-testid="stTabBar"] button[aria-selected="true"] span,
-    div[data-testid="stTabBar"] [data-baseweb="tab"][aria-selected="true"] span {
-        color: #0000FF !important; /* Vivid Corporate Blue text label */
+    /* Target text layers inside the active button element */
+    [aria-selected="true"] p, [aria-selected="true"] span, [aria-selected="true"] div,
+    [data-baseweb="tab"][aria-selected="true"] p, [data-baseweb="tab"][aria-selected="true"] span,
+    div[data-testid="stTabBar"] button[aria-selected="true"] p, div[data-testid="stTabBar"] button[aria-selected="true"] span,
+    .stTabs [role="tab"][aria-selected="true"] p, .stTabs [role="tab"][aria-selected="true"] span {
+        color: #0000FF !important;             /* Vivid Corporate Blue text output */
         font-weight: 700 !important;
     }
 
