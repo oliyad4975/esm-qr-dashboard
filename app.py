@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Import ReportLab Engines for crisp PDF generation and in-memory image streaming
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader  # <-- Added to handle in-memory buffer conversion safely
+from reportlab.lib.utils import ImageReader
 
 # -------------------------------------------------------------------------
 # STYLING & VIEWPORT CONFIGURATION (ABSOLUTE DOM TARGETING TAB ENGINE)
@@ -142,46 +142,49 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# HIGH-PRECISION DUAL-COLUMN COMPLIANCE CARD RENDER ENGINE
+# HIGH-PRECISION DUAL-COLUMN COMPLIANCE CARD RENDER ENGINE (PROPORTIONAL)
 # -------------------------------------------------------------------------
 def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
-    """Compiles high-resolution assets into a structured dual-column compliance card matching the 'Good' layout symmetry exactly."""
+    """Compiles assets into a structured layout matching the 'Good' design by anchoring to the QR footprint."""
+    # Create pure white baseline canvas
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
-    # 1. Geometry Calculations & Absolute Spacing Bounds
+    # 1. QR Code Geometry Calculations (Left Column Anchor)
     qr_target_dim = int(c_height * 0.82)
-    qr_x_origin = int(c_width * 0.05)
+    qr_x_origin = int(c_width * 0.06)
     qr_y_origin = (c_height - qr_target_dim) // 2
     
-    # Define Right Column Boundary Space
-    right_column_start_x = qr_x_origin + qr_target_dim + int(c_width * 0.05)
-    right_column_width = c_width - right_column_start_x - int(c_width * 0.05)
+    # 2. Right Column Horizontal Boundary Space
+    right_column_start_x = qr_x_origin + qr_target_dim + int(c_width * 0.06)
+    right_column_width = c_width - right_column_start_x - int(c_width * 0.06)
     right_column_center_x = right_column_start_x + (right_column_width // 2)
     
-    # Calculate Dynamic Wrap Limits based on available horizontal real-estate
+    # Calculate Dynamic Wrap Limits based on right field width
     text_wrap_limit = max(24, int(right_column_width / (base_f_size * 0.55)))
 
-    # 2. Font Loading Engine
+    # 3. Font Loading Subroutine
     try:
         font_header = ImageFont.truetype("arialbd.ttf", base_f_size)
         font_metadata = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.72))
-        font_meta_bold = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.78))
+        font_meta_bold = ImageFont.truetype("arialbd.ttf", int(base_f_size * 0.76))
     except IOError:
         font_header = ImageFont.load_default()
         font_metadata = ImageFont.load_default()
         font_meta_bold = ImageFont.load_default()
 
-    # 3. Render Left Hand Columns Component (QR Code)
+    # 4. Render Left Hand Column Component (QR Code)
     if qr_raw_img:
         qr_clean = qr_raw_img.convert("RGBA").resize((qr_target_dim, qr_target_dim), Image.Resampling.LANCZOS)
         label_canvas.paste(qr_clean, (qr_x_origin, qr_y_origin), qr_clean)
 
-    # 4. Render Right Hand Column Structural Component Stack
-    # Top Component: Company Name Header Text Block
-    y_text_cursor = int(c_height * 0.12)
+    # 5. Render Right Hand Column Structural Component Stack (Anchored to QR Height)
+    # Target elements are scaled proportionally to qr_target_dim to preserve the exact layout layout profile
+    
+    # Block A: Company Name Header Text Block (Positioned at Top Boundary of QR)
+    y_text_cursor = qr_y_origin + int(qr_target_dim * 0.02)
     company_lines = textwrap.wrap(str(company_txt).upper(), width=text_wrap_limit)
     
     for line in company_lines:
@@ -189,17 +192,18 @@ def render_blueprint_compliance_label(
         line_w = right - left
         line_h = bottom - top
         draw_interface.text((right_column_center_x - (line_w // 2), y_text_cursor), line, fill=(0, 0, 0), font=font_header)
-        y_text_cursor += line_h + int(c_height * 0.015)
+        y_text_cursor += line_h + int(qr_target_dim * 0.02)
 
-    # Middle Component: Center Anchored Certification Scheme Logo
-    logo_target_dim = int(c_height * 0.36)
-    logo_y_pos = int(c_height * 0.32)
+    # Block B: Center Anchored Certification Scheme Logo (Scaled Proportional to QR Height)
+    logo_target_dim = int(qr_target_dim * 0.44)  # High-contrast 44% footprint match
+    logo_y_pos = qr_y_origin + ((qr_target_dim - logo_target_dim) // 2) - int(qr_target_dim * 0.02)
+    
     if logo_raw_img:
         logo_clean = logo_raw_img.convert("RGBA").resize((logo_target_dim, logo_target_dim), Image.Resampling.LANCZOS)
         logo_x_pos = right_column_center_x - (logo_target_dim // 2)
         label_canvas.paste(logo_clean, (logo_x_pos, logo_y_pos), logo_clean)
 
-    # Bottom Component: Metadata Structural Block Stack
+    # Block C: Metadata Structural Block Stack (Aligned with Bottom Footprint of QR)
     meta_stack_collection = []
     if product_txt and str(product_txt).lower() != 'nan':
         meta_stack_collection.append((str(product_txt).upper(), font_meta_bold))
@@ -214,14 +218,22 @@ def render_blueprint_compliance_label(
         display_client = f"CLIENT CODE: {client_val}" if "CLIENT" not in client_val else client_val
         meta_stack_collection.append((display_client, font_metadata))
 
-    y_text_cursor = int(c_height * 0.72)
+    # Calculate stack height to bottom-align perfectly
+    estimated_stack_height = len(meta_stack_collection) * (int(base_f_size * 0.72) + int(qr_target_dim * 0.015))
+    y_text_cursor = (qr_y_origin + qr_target_dim) - estimated_stack_height - int(qr_target_dim * 0.02)
+    
+    # Fallback to prevent overlapping with logo area
+    min_allowable_y = logo_y_pos + logo_target_dim + int(qr_target_dim * 0.02)
+    if y_text_cursor < min_allowable_y:
+        y_text_cursor = min_allowable_y
+
     for info_string, font_style in meta_stack_collection:
         if info_string.strip():
             left, top, right, bottom = draw_interface.textbbox((0, 0), info_string, font=font_style)
             item_w = right - left
             item_h = bottom - top
             draw_interface.text((right_column_center_x - (item_w // 2), y_text_cursor), info_string, fill=(0, 0, 0), font=font_style)
-            y_text_cursor += item_h + int(c_height * 0.012)
+            y_text_cursor += item_h + int(qr_target_dim * 0.015)
 
     return label_canvas
 
@@ -437,7 +449,7 @@ with tab_production:
                                 final_compiled_vector.save(internal_img_ram_buffer, format="JPEG", quality=95)
                                 zip_envelope.writestr(export_file_name, internal_img_ram_buffer.getvalue())
 
-                                # FIX: Convert the byte-stream to ReportLab ImageReader format to circumvent OS path exception
+                                # Convert the byte-stream to ReportLab ImageReader format safely
                                 internal_img_ram_buffer.seek(0)
                                 wrapped_pdf_image = ImageReader(internal_img_ram_buffer)
                                 
