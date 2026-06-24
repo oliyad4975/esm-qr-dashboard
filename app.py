@@ -13,7 +13,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
 # -------------------------------------------------------------------------
-# STYLING & VIEWPORT CONFIGURATION (ABSOLUTE DOM TARGETING TAB ENGINE)
+# RESTORED DASHBOARD VISUAL LAYOUT & STYLING
 # -------------------------------------------------------------------------
 st.markdown("""
     <style>
@@ -135,17 +135,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# HIGH-PRECISION RE-ALIGNED RENDER ENGINE
+# HIGH-PRECISION FILE OUTPUT GENERATION ENGINE (TARGETS IMAGE/PDF ONLY)
 # -------------------------------------------------------------------------
 def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
-    """Generates the label layout matching the red spatial guidelines exactly."""
-    # Create white baseline canvas
+    """Generates the file layout matching the red spatial guidelines exactly."""
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
-    # Draw enclosing outer border
     border_thickness = max(4, int(c_height * 0.008))
     draw_interface.rectangle(
         [(0, 0), (c_width - 1, c_height - 1)], 
@@ -153,12 +151,10 @@ def render_blueprint_compliance_label(
         width=border_thickness
     )
 
-    # Fixed Vertical/Horizontal Metrics matching QR bounds
     qr_target_dim = int(c_height * 0.86)
     qr_x_origin = border_thickness + int(c_width * 0.03)
     qr_y_origin = (c_height - qr_target_dim) // 2
     
-    # Load bold font assets to match requested visibility scaling
     try:
         font_header = ImageFont.truetype("arialbd.ttf", int(base_f_size * 1.5))
         font_metadata = ImageFont.truetype("arialbd.ttf", int(base_f_size * 1.15))
@@ -166,23 +162,18 @@ def render_blueprint_compliance_label(
         font_header = ImageFont.load_default()
         font_metadata = ImageFont.load_default()
 
-    # Calculate precise column start right next to the QR code (approx. 2 character space gap)
     two_letter_gap = int(base_f_size * 0.8)
     right_column_start_x = qr_x_origin + qr_target_dim + two_letter_gap
     right_column_end_x = c_width - (border_thickness + int(c_width * 0.04))
     right_column_width = right_column_end_x - right_column_start_x
     
-    # Dynamic Wrap Limits based on text column width
     text_wrap_limit = max(18, int(right_column_width / (base_f_size * 0.55)))
 
-    # Render Left Hand Column Component (QR Code)
     if qr_raw_img:
         qr_clean = qr_raw_img.convert("RGBA").resize((qr_target_dim, qr_target_dim), Image.Resampling.LANCZOS)
         label_canvas.paste(qr_clean, (qr_x_origin, qr_y_origin), qr_clean)
 
-    # ---------------------------------------------------------------------
     # BOX 1: COMPANY NAME BLOCK (Top Margin-Aligned)
-    # ---------------------------------------------------------------------
     y_text_cursor = qr_y_origin
     company_lines = textwrap.wrap(str(company_txt).upper(), width=text_wrap_limit)
     
@@ -190,14 +181,11 @@ def render_blueprint_compliance_label(
         left, top, right, bottom = draw_interface.textbbox((0, 0), line, font=font_header)
         line_w = right - left
         line_h = bottom - top
-        # Centered horizontally inside the metadata column tracking boundary
         x_pos = right_column_start_x + ((right_column_width - line_w) // 2)
         draw_interface.text((x_pos, y_text_cursor), line, fill=(0, 0, 0), font=font_header)
         y_text_cursor += line_h + int(c_height * 0.01)
 
-    # ---------------------------------------------------------------------
     # BOX 3: PRODUCT METADATA BLOCK (Bottom Margin-Aligned)
-    # ---------------------------------------------------------------------
     meta_stack_collection = []
     if product_txt and str(product_txt).lower() != 'nan':
         meta_stack_collection.append(str(product_txt).upper())
@@ -210,7 +198,6 @@ def render_blueprint_compliance_label(
     total_metadata_height = 0
     calculated_lines = []
 
-    # Wrap metadata dynamically to calculate stack height
     for item in meta_stack_collection:
         wrapped_sublines = textwrap.wrap(item, width=text_wrap_limit)
         for subline in wrapped_sublines:
@@ -218,10 +205,8 @@ def render_blueprint_compliance_label(
             calculated_lines.append((subline, bottom - top))
             total_metadata_height += (bottom - top) + line_spacing
 
-    # Anchor bottom band flush with the bottom of the QR code matrix
     y_metadata_start = (qr_y_origin + qr_target_dim) - total_metadata_height + line_spacing
 
-    # Render Bottom Block Elements
     y_bottom_cursor = y_metadata_start
     for subline, line_h in calculated_lines:
         left, top, right, bottom = draw_interface.textbbox((0, 0), subline, font=font_metadata)
@@ -230,22 +215,17 @@ def render_blueprint_compliance_label(
         draw_interface.text((x_pos, y_bottom_cursor), subline, fill=(0, 0, 0), font=font_metadata)
         y_bottom_cursor += line_h + line_spacing
 
-    # ---------------------------------------------------------------------
-    # BOX 2: LOGO SYMBOL PLACEMENT (Shifted Completely to Left / Vertically Centered)
-    # ---------------------------------------------------------------------
+    # BOX 2: LOGO SYMBOL PLACEMENT
     if logo_raw_img:
-        # Measure available workspace gap between top box and bottom box boundaries
         available_vertical_space = y_metadata_start - y_text_cursor
         logo_dim = int(available_vertical_space * 0.9)
         
-        # Keep logo dimensions balanced relative to the label height bounds
         max_logo_dim = int(qr_target_dim * 0.45)
         min_logo_dim = int(qr_target_dim * 0.28)
         logo_dim = max(min_logo_dim, min(logo_dim, max_logo_dim))
 
         logo_clean = logo_raw_img.convert("RGBA").resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
         
-        # Center the logo horizontally and vertically inside the central intermediate grid space
         logo_x = right_column_start_x + ((right_column_width - logo_dim) // 2)
         logo_y = y_text_cursor + ((available_vertical_space - logo_dim) // 2)
         
@@ -254,14 +234,13 @@ def render_blueprint_compliance_label(
     return label_canvas
 
 # -------------------------------------------------------------------------
-# ADAPTIVE FUZZY DEEP SEARCH INGESTION SUBROUTINE
+# ADAPTIVE FUZZY EXCEL INGESTION
 # -------------------------------------------------------------------------
 def clean_token(val):
     return re.sub(r'[^a-z0-9]', '', str(val).lower().strip())
 
 def parse_and_validate_excel_adaptive(workbook_buffer):
     raw_df = pd.read_excel(workbook_buffer, header=None)
-    
     target_keywords = {"companyname", "company", "producttype", "product", "clientcode", "standardrno", "qrfilename"}
     header_row_index = 0
     found_valid_header_grid = False
@@ -269,7 +248,6 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
     for idx in range(min(25, len(raw_df))):
         row_tokens = [clean_token(cell) for cell in raw_df.iloc[idx].dropna()]
         matches = [tok for tok in row_tokens if any(key in tok for key in target_keywords)]
-        
         if len(matches) >= 2:
             header_row_index = idx
             found_valid_header_grid = True
@@ -303,10 +281,7 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
 
     if resolved_schema["company"] not in final_df.columns or resolved_schema["qr"] not in final_df.columns:
         all_found = ", ".join([f"'{x}'" for x in final_df.columns])
-        raise KeyError(
-            f"Fuzzy lookup engine failed to locate mandatory columns. "
-            f"Detected headers in parsed layer: {all_found}"
-        )
+        raise KeyError(f"Fuzzy lookup engine failed to locate mandatory columns. Detected headers: {all_found}")
 
     return final_df, resolved_schema
 
@@ -498,7 +473,7 @@ with tab_production:
                 st.error(f"Critical Runtime Exception Error: {str(system_pipeline_fault)}")
 
     # -------------------------------------------------------------------------
-    # DUAL-FORMAT DOWNLOAD CONSOLE DECK
+    # DOWNLOAD CONSOLE DECK
     # -------------------------------------------------------------------------
     if st.session_state.is_process_clean and st.session_state.zip_stream_bytes:
         st.markdown(
