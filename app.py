@@ -346,116 +346,103 @@ def render_compliance_label(
 ) -> Image.Image:
     """
     Compile assets into a structured compliance label layout.
-    Tight vertical packing matching reference image:
-    - Company name at top, flush with QR top edge
-    - Logo centered in remaining middle space, large
-    - Metadata tightly packed at bottom, flush with QR bottom edge
-    - Minimal gaps, all bold text
+    All text stays within QR top/bottom bounds (red lines).
     """
-    # Create white canvas
     label = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(label)
 
-    # Draw border
     border_thickness = max(3, int(height * 0.008))
     _draw_border(draw, width, height, border_thickness)
 
-    # QR code: large, nearly full height, positioned left with small margin
+    # QR fills the area between the red lines
     qr_dim = int(height * 0.88)
     qr_x = border_thickness + int(width * 0.025)
     qr_y = (height - qr_dim) // 2
 
-    # Scale fonts — larger and bolder for visibility
-    scaled_size = int(base_font_size * 6.6)
-    font_header = resolve_font(scaled_size, bold=True)
-    font_meta = resolve_font(int(scaled_size * 0.85), bold=True)
-    font_meta_bold = resolve_font(int(scaled_size * 0.90), bold=True)
-
-    # Right column: very tight gap from QR
-    gap = int(scaled_size * 0.4)
+    # Right column
+    gap = int(width * 0.03)
     right_x_start = qr_x + qr_dim + gap
     right_x_end = width - (border_thickness + int(width * 0.025))
     right_width = right_x_end - right_x_start
     right_center = right_x_start + (right_width // 2)
 
-    # Text wrap limit
-    wrap_limit = max(10, int(right_width / (scaled_size * 0.5)))
-
-    # Draw QR code
     _draw_qr_code(label, qr_img, qr_x, qr_y, qr_dim)
 
-    # === TOP BLOCK: Company Name (anchored flush to QR top edge) ===
+    # Font sizes proportional to QR height for readability
+    header_font_size = int(qr_dim * 0.12)
+    header_font_size = max(header_font_size, int(base_font_size * 3.0))
+    header_font = resolve_font(header_font_size, bold=True)
+
+    meta_font_size = int(qr_dim * 0.09)
+    meta_font_size = max(meta_font_size, int(base_font_size * 2.2))
+    meta_font = resolve_font(meta_font_size, bold=True)
+    meta_bold_font = resolve_font(int(meta_font_size * 1.1), bold=True)
+
+    wrap_limit = max(8, int(right_width / (header_font_size * 0.55)))
+
+    # === COMPANY NAME (top, flush with QR top) ===
     company_lines = textwrap.wrap(str(company).upper(), width=wrap_limit)
     header_h = 0
-    y_cursor = qr_y
+    y = qr_y
     for line in company_lines:
-        bbox = draw.textbbox((0, 0), line, font=font_header)
+        bbox = draw.textbbox((0, 0), line, font=header_font)
         line_w = bbox[2] - bbox[0]
         line_h = bbox[3] - bbox[1]
-        draw.text((right_center - (line_w // 2), y_cursor), line, fill=(0, 0, 0), font=font_header)
-        spacing = line_h + int(qr_dim * 0.01)
-        y_cursor += spacing
-        header_h += spacing
+        draw.text((right_center - line_w // 2, y), line, fill=(0, 0, 0), font=header_font)
+        y += line_h + 6
+        header_h += line_h + 6
 
-    # === BOTTOM BLOCK: Metadata (anchored flush to QR bottom edge) ===
+    # === METADATA (bottom, flush with QR bottom) ===
     meta_items = []
+    meta_fonts = []
     if product and str(product).lower() != "nan":
-        meta_items.append((str(product).upper(), font_meta_bold))
+        meta_items.append(str(product).upper())
+        meta_fonts.append(meta_bold_font)
     if standard and str(standard).lower() != "nan":
         clean_std = re.sub(r"^STANDARD\s+R/NO:\s*", "", str(standard), flags=re.IGNORECASE).strip().upper()
         if clean_std:
-            meta_items.append((clean_std, font_meta))
+            meta_items.append(clean_std)
+            meta_fonts.append(meta_font)
     if client and str(client).lower() != "nan":
         clean_client = re.sub(r"^CLIENT\s+CODE:\s*", "", str(client), flags=re.IGNORECASE).strip().upper()
         if clean_client:
-            meta_items.append((clean_client, font_meta))
+            meta_items.append(clean_client)
+            meta_fonts.append(meta_font)
 
-    # Calculate metadata stack height from bottom up
-    line_spacing = int(qr_dim * 0.008)
-    stack_height = 0
-    for text, font in meta_items:
-        bbox = draw.textbbox((0, 0), text, font=font)
-        stack_height += (bbox[3] - bbox[1]) + line_spacing
+    line_spacing = 4
+    stack_h = sum(
+        (draw.textbbox((0, 0), t, font=f)[3] - draw.textbbox((0, 0), t, font=f)[1]) + line_spacing
+        for t, f in zip(meta_items, meta_fonts)
+    )
 
-    # Start metadata so it ends exactly at QR bottom edge
-    meta_y_start = (qr_y + qr_dim) - stack_height
-
-    # Draw metadata lines
-    y_cursor = meta_y_start
-    for text, font in meta_items:
-        text = text.strip()
-        if not text:
-            continue
+    meta_y = (qr_y + qr_dim) - stack_h
+    y = meta_y
+    for text, font in zip(meta_items, meta_fonts):
         bbox = draw.textbbox((0, 0), text, font=font)
         item_w = bbox[2] - bbox[0]
         item_h = bbox[3] - bbox[1]
-        draw.text((right_center - (item_w // 2), y_cursor), text, fill=(0, 0, 0), font=font)
-        y_cursor += item_h + line_spacing
+        draw.text((right_center - item_w // 2, y), text, fill=(0, 0, 0), font=font)
+        y += item_h + line_spacing
 
-    # === MIDDLE BLOCK: Logo (fills ALL remaining space between header and metadata) ===
-    available_top = qr_y + header_h + int(qr_dim * 0.01)
-    available_bottom = meta_y_start - int(qr_dim * 0.01)
-    available_height = available_bottom - available_top
-    available_width = right_width
+    # === LOGO (middle, fills remaining space) ===
+    top_margin = qr_y + header_h + 8
+    bottom_margin = meta_y - 8
+    avail_h = bottom_margin - top_margin
+    avail_w = right_width
 
-    # Logo should fill as much space as possible
-    if logo_img is not None and available_height > 10 and available_width > 10:
-        # Determine best fit: scale to fit within available width and height
-        logo_ratio = logo_img.width / logo_img.height
-        avail_ratio = available_width / available_height
+    if logo_img is not None and avail_h > 30 and avail_w > 30:
+        ratio = logo_img.width / logo_img.height
+        avail_ratio = avail_w / avail_h
 
-        if logo_ratio > avail_ratio:
-            # Logo is wider relative to available space — fit to width
-            logo_w = int(available_width * 0.88)
-            logo_h = int(logo_w / logo_ratio)
+        if ratio > avail_ratio:
+            logo_w = int(avail_w * 0.70)
+            logo_h = int(logo_w / ratio)
         else:
-            # Logo is taller — fit to height
-            logo_h = int(available_height * 0.88)
-            logo_w = int(logo_h * logo_ratio)
+            logo_h = int(avail_h * 0.70)
+            logo_w = int(logo_h * ratio)
 
-        # Center the logo in the available space
-        logo_x = right_x_start + (available_width - logo_w) // 2
-        logo_y = available_top + (available_height - logo_h) // 2
+        logo_x = right_x_start + (avail_w - logo_w) // 2
+        logo_y = top_margin + (avail_h - logo_h) // 2
 
         logo_clean = logo_img.convert("RGBA").resize((logo_w, logo_h), Image.Resampling.LANCZOS)
         label.paste(logo_clean, (logo_x, logo_y), logo_clean)
@@ -463,9 +450,6 @@ def render_compliance_label(
     return label
 
 
-# -------------------------------------------------------------------------
-# EXCEL PARSING ENGINE
-# -------------------------------------------------------------------------
 def _clean_token(val) -> str:
     """Normalize cell value for fuzzy matching."""
     return re.sub(r"[^a-z0-9]", "", str(val).lower().strip())
