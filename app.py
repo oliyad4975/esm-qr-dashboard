@@ -991,5 +991,4 @@ with tab_production:
                 file_name="dsm_batch_register.pdf",
                 mime="application/pdf",
                 use_container_width=True
-            )cd "C:\Users\user\ESM QR Dashboard"
-del dsm_label_generator_improved.py
+            )
