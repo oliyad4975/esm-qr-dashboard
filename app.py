@@ -366,7 +366,7 @@ def render_compliance_label(
     qr_y = (height - qr_dim) // 2
 
     # Scale fonts — larger and bolder for visibility
-    scaled_size = int(base_font_size * 2.2)
+    scaled_size = int(base_font_size * 6.6)
     font_header = resolve_font(scaled_size, bold=True)
     font_meta = resolve_font(int(scaled_size * 0.85), bold=True)
     font_meta_bold = resolve_font(int(scaled_size * 0.90), bold=True)
@@ -446,11 +446,11 @@ def render_compliance_label(
 
         if logo_ratio > avail_ratio:
             # Logo is wider relative to available space — fit to width
-            logo_w = int(available_width * 0.98)
+            logo_w = int(available_width * 0.88)
             logo_h = int(logo_w / logo_ratio)
         else:
             # Logo is taller — fit to height
-            logo_h = int(available_height * 0.98)
+            logo_h = int(available_height * 0.88)
             logo_w = int(logo_h * logo_ratio)
 
         # Center the logo in the available space
@@ -865,7 +865,7 @@ st.markdown(
 st.sidebar.markdown("### 🎛️ Geometric Canvas Controllers")
 ui_width = st.sidebar.slider("Label Width (px)", 800, 2400, 1200, step=100)
 ui_height = st.sidebar.slider("Label Height (px)", 500, 1500, 680, step=20)
-ui_font_sz = st.sidebar.slider("Base Font Size", 16, 60, 32, step=2)
+ui_font_sz = st.sidebar.slider("Base Font Size", 16, 120, 32, step=2)
 
 st.sidebar.markdown("---")
 ui_disk_path = st.sidebar.text_input(
