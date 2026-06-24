@@ -345,152 +345,132 @@ def render_compliance_label(
     base_font_size: int
 ) -> Image.Image:
     """
-    Compile assets into a structured compliance label layout.
-    All text stays within QR top/bottom bounds (red lines).
+    Render compliance label with strict layout:
+    - QR on left, filling full height with small margins
+    - Right column: company (top, ONE line), logo (centered), metadata (bottom)
+    - NOTHING overlaps QR or goes outside label borders
     """
     label = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(label)
 
-    border_thickness = max(3, int(height * 0.008))
+    border_thickness = max(3, int(height * 0.012))
     _draw_border(draw, width, height, border_thickness)
 
-    # QR fills the area between the red lines
-    qr_dim = int(height * 0.88)
-    qr_x = border_thickness + int(width * 0.025)
-    qr_y = (height - qr_dim) // 2
+    # === LAYOUT CONSTANTS ===
+    margin = int(height * 0.04)  # margin inside border
+    qr_margin = int(height * 0.03)
 
-    # Right column
-    gap = int(width * 0.06)
-    right_x_start = qr_x + qr_dim + gap
-    right_x_end = width - (border_thickness + int(width * 0.025))
-    right_width = right_x_end - right_x_start
-    right_center = right_x_start + (right_width // 2)
+    # QR takes left side, nearly full height
+    qr_dim = height - (2 * margin)
+    qr_x = margin
+    qr_y = margin
+
+    # Right column starts AFTER QR with safe gap
+    gap = int(height * 0.05)
+    right_x = qr_x + qr_dim + gap
+    right_width = width - right_x - margin
+    right_center = right_x + (right_width // 2)
+
+    # Available vertical space in right column
+    col_top = qr_y
+    col_bottom = qr_y + qr_dim
+    col_height = col_bottom - col_top
 
     _draw_qr_code(label, qr_img, qr_x, qr_y, qr_dim)
 
-    # Font sizes proportional to QR height for readability
-    header_font_size = int(qr_dim * 0.12)
-    header_font_size = max(header_font_size, int(base_font_size * 3.0))
-    header_font = resolve_font(company_font_size, bold=True)
+    # === COMPANY NAME: ONE LINE, auto-fit to right column width ===
+    company_text = str(company).upper().strip()
+    max_text_width = int(right_width * 0.95)
 
-    meta_font_size = int(qr_dim * 0.09)
-    meta_font_size = max(meta_font_size, int(base_font_size * 2.2))
-    meta_font = resolve_font(meta_font_size, bold=True)
-    meta_bold_font = resolve_font(int(meta_font_size * 1.1), bold=True)
+    # Binary search for font size that fits in one line
+    min_size = 8
+    max_size = int(col_height * 0.18)
+    best_size = min_size
+    best_font = resolve_font(best_size, bold=True)
 
-    wrap_limit = max(8, int(right_width / (header_font_size * 0.55)))
+    while min_size <= max_size:
+        mid = (min_size + max_size) // 2
+        test_font = resolve_font(mid, bold=True)
+        bbox = draw.textbbox((0, 0), company_text, font=test_font)
+        text_w = bbox[2] - bbox[0]
+        if text_w <= max_text_width:
+            best_size = mid
+            best_font = test_font
+            min_size = mid + 1
+        else:
+            max_size = mid - 1
 
-    # === COMPANY NAME (top, flush with QR top) ===
-    company_lines = textwrap.wrap(str(company).upper(), width=wrap_limit)
-    header_h = 0
-    y = qr_y
-    for line in company_lines:
-        bbox = draw.textbbox((0, 0), line, font=header_font)
-        line_w = bbox[2] - bbox[0]
-        line_h = bbox[3] - bbox[1]
-        draw.text((right_center - line_w // 2, y), line, fill=(0, 0, 0), font=header_font)
-        y += line_h + 6
-        header_h += line_h + 6
+    company_font = best_font
+    bbox = draw.textbbox((0, 0), company_text, font=company_font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    draw.text((right_center - (text_w // 2), col_top), company_text, fill=(0, 0, 0), font=company_font)
 
-    # === METADATA (bottom, flush with QR bottom) ===
-    meta_items = []
-    meta_fonts = []
+    # === METADATA: bottom-aligned, calculate from bottom up ===
+    meta_raw = []
     if product and str(product).lower() != "nan":
-        meta_items.append(str(product).upper())
-        meta_fonts.append(meta_bold_font)
+        meta_raw.append(str(product).upper())
     if standard and str(standard).lower() != "nan":
-        clean_std = re.sub(r"^STANDARD\s+R/NO:\s*", "", str(standard), flags=re.IGNORECASE).strip().upper()
-        if clean_std:
-            meta_items.append(clean_std)
-            meta_fonts.append(meta_font)
+        clean = re.sub(r"^STANDARD\s+R/NO:\s*", "", str(standard), flags=re.IGNORECASE).strip().upper()
+        if clean:
+            meta_raw.append(clean)
     if client and str(client).lower() != "nan":
-        clean_client = re.sub(r"^CLIENT\s+CODE:\s*", "", str(client), flags=re.IGNORECASE).strip().upper()
-        if clean_client:
-            meta_items.append(clean_client)
-            meta_fonts.append(meta_font)
+        clean = re.sub(r"^CLIENT\s+CODE:\s*", "", str(client), flags=re.IGNORECASE).strip().upper()
+        if clean:
+            meta_raw.append(clean)
 
-    line_spacing = 4
-    stack_h = sum(
-        (draw.textbbox((0, 0), t, font=f)[3] - draw.textbbox((0, 0), t, font=f)[1]) + line_spacing
-        for t, f in zip(meta_items, meta_fonts)
-    )
+    # Metadata font: proportional to company font
+    meta_size = max(8, int(best_size * 0.55))
+    meta_font = resolve_font(meta_size, bold=True)
+    meta_bold_font = resolve_font(int(meta_size * 1.1), bold=True)
 
-    meta_y = (qr_y + qr_dim) - stack_h
-    y = meta_y
-    for text, font in zip(meta_items, meta_fonts):
-        bbox = draw.textbbox((0, 0), text, font=font)
-        item_w = bbox[2] - bbox[0]
-        item_h = bbox[3] - bbox[1]
-        draw.text((right_center - item_w // 2, y), text, fill=(0, 0, 0), font=font)
-        y += item_h + line_spacing
+    line_spacing = int(meta_size * 0.3)
+    meta_heights = []
+    for i, text in enumerate(meta_raw):
+        f = meta_bold_font if i == 0 else meta_font
+        bbox = draw.textbbox((0, 0), text, font=f)
+        meta_heights.append((bbox[3] - bbox[1]) + line_spacing)
 
-    # === LOGO (middle, fills remaining space) ===
-    top_margin = qr_y + header_h + 8
-    bottom_margin = meta_y - 8
-    avail_h = bottom_margin - top_margin
+    total_meta_h = sum(meta_heights) - line_spacing if meta_heights else 0
+    meta_y_start = col_bottom - total_meta_h
+
+    y = meta_y_start
+    for i, text in enumerate(meta_raw):
+        f = meta_bold_font if i == 0 else meta_font
+        bbox = draw.textbbox((0, 0), text, font=f)
+        w = bbox[2] - bbox[0]
+        h = bbox[3] - bbox[1]
+        draw.text((right_center - (w // 2), y), text, fill=(0, 0, 0), font=f)
+        y += h + line_spacing
+
+    # === LOGO: centered in remaining middle space ===
+    logo_top = col_top + text_h + int(col_height * 0.03)
+    logo_bottom = meta_y_start - int(col_height * 0.03)
+    avail_h = logo_bottom - logo_top
     avail_w = right_width
 
-    if logo_img is not None and avail_h > 30 and avail_w > 30:
-        ratio = logo_img.width / logo_img.height
-        avail_ratio = avail_w / avail_h
+    if logo_img is not None and avail_h > 10 and avail_w > 10:
+        lr = logo_img.width / logo_img.height
+        ar = avail_w / avail_h
 
-        if ratio > avail_ratio:
-            logo_w = int(avail_w * 0.70)
-            logo_h = int(logo_w / ratio)
+        if lr > ar:
+            lw = int(avail_w * 0.90)
+            lh = int(lw / lr)
         else:
-            logo_h = int(avail_h * 0.70)
-            logo_w = int(logo_h * ratio)
+            lh = int(avail_h * 0.90)
+            lw = int(lh * lr)
 
-        logo_x = right_x_start + (avail_w - logo_w) // 2
-        logo_y = top_margin + (avail_h - logo_h) // 2
+        # Clamp to available space
+        lw = min(lw, avail_w)
+        lh = min(lh, avail_h)
 
-        logo_clean = logo_img.convert("RGBA").resize((logo_w, logo_h), Image.Resampling.LANCZOS)
-        label.paste(logo_clean, (logo_x, logo_y), logo_clean)
+        lx = right_x + (avail_w - lw) // 2
+        ly = logo_top + (avail_h - lh) // 2
+
+        logo_clean = logo_img.convert("RGBA").resize((lw, lh), Image.Resampling.LANCZOS)
+        label.paste(logo_clean, (lx, ly), logo_clean)
 
     return label
-
-
-def _clean_token(val) -> str:
-    """Normalize cell value for fuzzy matching."""
-    return re.sub(r"[^a-z0-9]", "", str(val).lower().strip())
-
-
-def _find_header_row(df: pd.DataFrame, max_rows: int = MAX_HEADER_SCAN_ROWS) -> int:
-    """
-    Scan for header row using fuzzy keyword matching.
-
-    Returns:
-        Row index of detected header, or 0 if not found
-    """
-    target_keywords = {
-        "companyname", "company", "producttype", "product",
-        "clientcode", "standardrno", "qrfilename"
-    }
-
-    for idx in range(min(max_rows, len(df))):
-        row_tokens = [_clean_token(cell) for cell in df.iloc[idx].dropna()]
-        matches = [tok for tok in row_tokens if any(key in tok for key in target_keywords)]
-        if len(matches) >= MIN_HEADER_MATCHES:
-            return idx
-
-    return 0
-
-
-def _resolve_header(
-    norm_mapping: Dict[str, str],
-    variants: List[str],
-    fallback: str
-) -> str:
-    """Fuzzy header name resolver."""
-    for variant in variants:
-        cleaned = _clean_token(variant)
-        if cleaned in norm_mapping:
-            return norm_mapping[cleaned]
-        for native_col in norm_mapping:
-            if cleaned in native_col or native_col in cleaned:
-                return norm_mapping[native_col]
-    return fallback
-
 
 def parse_excel_workbook(workbook_buffer: io.BytesIO) -> Tuple[pd.DataFrame, Dict[str, str]]:
     """
