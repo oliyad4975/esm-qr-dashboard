@@ -13,16 +13,23 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
 # -------------------------------------------------------------------------
-# RESTORED DASHBOARD VISUAL LAYOUT & STYLING
+# STYLING & VIEWPORT CONFIGURATION (ABSOLUTE DOM TARGETING TAB ENGINE)
 # -------------------------------------------------------------------------
+st.set_page_config(
+    page_title="Digital Standards Mark (DSM) Unique Client Batch ID Generator",
+    page_icon="🇪🇹",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 st.markdown("""
     <style>
-    /* Main Dashboard Background Canvas */
+    /* 1. Main Dashboard Background Canvas */
     [data-testid="stAppViewContainer"] {
         background-color: #E0F2FE !important;
     }
     
-    /* UNIVERSAL TAB CONTROLLER */
+    /* 2. UNIVERSAL TAB CONTROLLER */
     [data-baseweb="tab-list"], 
     div[data-testid="stTabBar"], 
     .stTabs [role="tablist"] {
@@ -32,7 +39,7 @@ st.markdown("""
         gap: 14px !important;
     }
 
-    /* INITIAL / INACTIVE STATE */
+    /* 3. INITIAL / INACTIVE STATE */
     [data-baseweb="tab"], 
     div[data-testid="stTabBar"] button, 
     .stTabs [role="tab"] {
@@ -58,7 +65,7 @@ st.markdown("""
         background-color: #F1F5F9 !important;
     }
     
-    /* ACTIVE STATE OVERRIDE */
+    /* 4. ACTIVE STATE OVERRIDE */
     [aria-selected="true"], 
     [data-baseweb="tab"][aria-selected="true"], 
     div[data-testid="stTabBar"] button[aria-selected="true"],
@@ -135,112 +142,127 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# HIGH-PRECISION FILE OUTPUT GENERATION ENGINE (TARGETS IMAGE/PDF ONLY)
+# HIGH-PRECISION BOUNDED DUAL-COLUMN COMPLIANCE CARD RENDER ENGINE
 # -------------------------------------------------------------------------
 def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
-    """Generates the file layout matching the red spatial guidelines exactly."""
+    """Compiles assets into a structured layout bound inside a clean rectangular container box with doubled font visibility."""
+    # Create pure white baseline canvas
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
-    border_thickness = max(4, int(c_height * 0.008))
+    # Draw enclosing bounding box border
+    border_thickness = max(3, int(c_height * 0.008))
     draw_interface.rectangle(
         [(0, 0), (c_width - 1, c_height - 1)], 
         outline=(0, 0, 0), 
         width=border_thickness
     )
 
+    # Strict vertical constraints matching QR bounds
     qr_target_dim = int(c_height * 0.86)
     qr_x_origin = border_thickness + int(c_width * 0.03)
     qr_y_origin = (c_height - qr_target_dim) // 2
     
+    # Scale up text fonts to double size parameters and ensure bold weight implementation
+    doubled_font_size = int(base_f_size * 1.8)
     try:
-        font_header = ImageFont.truetype("arialbd.ttf", int(base_f_size * 1.5))
-        font_metadata = ImageFont.truetype("arialbd.ttf", int(base_f_size * 1.15))
+        font_header = ImageFont.truetype("arialbd.ttf", doubled_font_size)
+        font_metadata = ImageFont.truetype("arialbd.ttf", int(doubled_font_size * 0.85))
+        font_meta_bold = ImageFont.truetype("arialbd.ttf", int(doubled_font_size * 0.90))
     except IOError:
         font_header = ImageFont.load_default()
         font_metadata = ImageFont.load_default()
+        font_meta_bold = ImageFont.load_default()
 
-    two_letter_gap = int(base_f_size * 0.8)
+    # Shorten the gap between columns to approximately two character spaces
+    two_letter_gap = int(doubled_font_size * 0.7)
     right_column_start_x = qr_x_origin + qr_target_dim + two_letter_gap
-    right_column_end_x = c_width - (border_thickness + int(c_width * 0.04))
+    right_column_end_x = c_width - (border_thickness + int(c_width * 0.03))
     right_column_width = right_column_end_x - right_column_start_x
+    right_column_center_x = right_column_start_x + (right_column_width // 2)
     
-    text_wrap_limit = max(18, int(right_column_width / (base_f_size * 0.55)))
+    # Dynamic Wrap Limits based on the compressed right column boundary box
+    text_wrap_limit = max(16, int(right_column_width / (doubled_font_size * 0.6)))
 
+    # Render Left Hand Column Component (QR Code)
     if qr_raw_img:
         qr_clean = qr_raw_img.convert("RGBA").resize((qr_target_dim, qr_target_dim), Image.Resampling.LANCZOS)
         label_canvas.paste(qr_clean, (qr_x_origin, qr_y_origin), qr_clean)
 
-    # BOX 1: COMPANY NAME BLOCK (Top Margin-Aligned)
+    # Block A: Corporate Identifier Header Text Block (Anchored flush to Top edge of QR code)
     y_text_cursor = qr_y_origin
     company_lines = textwrap.wrap(str(company_txt).upper(), width=text_wrap_limit)
     
+    header_height = 0
     for line in company_lines:
         left, top, right, bottom = draw_interface.textbbox((0, 0), line, font=font_header)
         line_w = right - left
         line_h = bottom - top
-        x_pos = right_column_start_x + ((right_column_width - line_w) // 2)
-        draw_interface.text((x_pos, y_text_cursor), line, fill=(0, 0, 0), font=font_header)
-        y_text_cursor += line_h + int(c_height * 0.01)
+        draw_interface.text((right_column_center_x - (line_w // 2), y_text_cursor), line, fill=(0, 0, 0), font=font_header)
+        spacing_increment = line_h + int(qr_target_dim * 0.01)
+        y_text_cursor += spacing_increment
+        header_height += spacing_increment
 
-    # BOX 3: PRODUCT METADATA BLOCK (Bottom Margin-Aligned)
+    # Block C: Metadata Structural Block Stack Setup (Flushed to bottom edge of QR code)
     meta_stack_collection = []
     if product_txt and str(product_txt).lower() != 'nan':
-        meta_stack_collection.append(str(product_txt).upper())
+        meta_stack_collection.append((str(product_txt).upper(), font_meta_bold))
+        
     if standard_txt and str(standard_txt).lower() != 'nan':
-        meta_stack_collection.append(str(standard_txt).upper())
+        clean_std_val = re.sub(r'^STANDARD\s+R/NO:\s*', '', str(standard_txt), flags=re.IGNORECASE).strip().upper()
+        meta_stack_collection.append((clean_std_val, font_metadata))
+        
     if client_txt and str(client_txt).lower() != 'nan':
-        meta_stack_collection.append(str(client_txt).upper())
+        clean_client_val = re.sub(r'^CLIENT\s+CODE:\s*', '', str(client_txt), flags=re.IGNORECASE).strip().upper()
+        meta_stack_collection.append((clean_client_val, font_metadata))
 
-    line_spacing = int(c_height * 0.012)
-    total_metadata_height = 0
-    calculated_lines = []
+    # Calculate stack height to bottom-align perfectly with the lower edge of the QR code matrix
+    line_spacing = int(qr_target_dim * 0.015)
+    estimated_stack_height = 0
+    for info_string, font_style in meta_stack_collection:
+        left, top, right, bottom = draw_interface.textbbox((0, 0), info_string, font=font_style)
+        estimated_stack_height += (bottom - top) + line_spacing
 
-    for item in meta_stack_collection:
-        wrapped_sublines = textwrap.wrap(item, width=text_wrap_limit)
-        for subline in wrapped_sublines:
-            left, top, right, bottom = draw_interface.textbbox((0, 0), subline, font=font_metadata)
-            calculated_lines.append((subline, bottom - top))
-            total_metadata_height += (bottom - top) + line_spacing
+    y_meta_start = (qr_y_origin + qr_target_dim) - estimated_stack_height
 
-    y_metadata_start = (qr_y_origin + qr_target_dim) - total_metadata_height + line_spacing
+    # Block B: Center Anchored Certification Scheme Logo (Fits dynamically within interior margin)
+    available_logo_space = y_meta_start - (qr_y_origin + header_height)
+    logo_target_dim = int(available_logo_space * 0.85) 
+    
+    max_logo_dim = int(qr_target_dim * 0.40)
+    min_logo_dim = int(qr_target_dim * 0.25)
+    logo_target_dim = max(min_logo_dim, min(logo_target_dim, max_logo_dim))
 
-    y_bottom_cursor = y_metadata_start
-    for subline, line_h in calculated_lines:
-        left, top, right, bottom = draw_interface.textbbox((0, 0), subline, font=font_metadata)
-        line_w = right - left
-        x_pos = right_column_start_x + ((right_column_width - line_w) // 2)
-        draw_interface.text((x_pos, y_bottom_cursor), subline, fill=(0, 0, 0), font=font_metadata)
-        y_bottom_cursor += line_h + line_spacing
-
-    # BOX 2: LOGO SYMBOL PLACEMENT
+    logo_y_pos = qr_y_origin + header_height + ((available_logo_space - logo_target_dim) // 2)
+    
     if logo_raw_img:
-        available_vertical_space = y_metadata_start - y_text_cursor
-        logo_dim = int(available_vertical_space * 0.9)
-        
-        max_logo_dim = int(qr_target_dim * 0.45)
-        min_logo_dim = int(qr_target_dim * 0.28)
-        logo_dim = max(min_logo_dim, min(logo_dim, max_logo_dim))
+        logo_clean = logo_raw_img.convert("RGBA").resize((logo_target_dim, logo_target_dim), Image.Resampling.LANCZOS)
+        logo_x_pos = right_column_center_x - (logo_target_dim // 2)
+        label_canvas.paste(logo_clean, (logo_x_pos, logo_y_pos), logo_clean)
 
-        logo_clean = logo_raw_img.convert("RGBA").resize((logo_dim, logo_dim), Image.Resampling.LANCZOS)
-        
-        logo_x = right_column_start_x + ((right_column_width - logo_dim) // 2)
-        logo_y = y_text_cursor + ((available_vertical_space - logo_dim) // 2)
-        
-        label_canvas.paste(logo_clean, (logo_x, logo_y), logo_clean)
+    # Render Metadata lines starting precisely at the calculated lower vertical margin threshold
+    y_text_cursor = max(y_meta_start, logo_y_pos + logo_target_dim + int(qr_target_dim * 0.01))
+    for info_string, font_style in meta_stack_collection:
+        if info_string.strip():
+            left, top, right, bottom = draw_interface.textbbox((0, 0), info_string, font=font_style)
+            item_w = right - left
+            item_h = bottom - top
+            draw_interface.text((right_column_center_x - (item_w // 2), y_text_cursor), info_string, fill=(0, 0, 0), font=font_style)
+            y_text_cursor += item_h + line_spacing
 
     return label_canvas
 
 # -------------------------------------------------------------------------
-# ADAPTIVE FUZZY EXCEL INGESTION
+# ADAPTIVE FUZZY DEEP SEARCH INGESTION SUBROUTINE
 # -------------------------------------------------------------------------
 def clean_token(val):
     return re.sub(r'[^a-z0-9]', '', str(val).lower().strip())
 
 def parse_and_validate_excel_adaptive(workbook_buffer):
     raw_df = pd.read_excel(workbook_buffer, header=None)
+    
     target_keywords = {"companyname", "company", "producttype", "product", "clientcode", "standardrno", "qrfilename"}
     header_row_index = 0
     found_valid_header_grid = False
@@ -248,6 +270,7 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
     for idx in range(min(25, len(raw_df))):
         row_tokens = [clean_token(cell) for cell in raw_df.iloc[idx].dropna()]
         matches = [tok for tok in row_tokens if any(key in tok for key in target_keywords)]
+        
         if len(matches) >= 2:
             header_row_index = idx
             found_valid_header_grid = True
@@ -281,7 +304,10 @@ def parse_and_validate_excel_adaptive(workbook_buffer):
 
     if resolved_schema["company"] not in final_df.columns or resolved_schema["qr"] not in final_df.columns:
         all_found = ", ".join([f"'{x}'" for x in final_df.columns])
-        raise KeyError(f"Fuzzy lookup engine failed to locate mandatory columns. Detected headers: {all_found}")
+        raise KeyError(
+            f"Fuzzy lookup engine failed to locate mandatory columns. "
+            f"Detected headers in parsed layer: {all_found}"
+        )
 
     return final_df, resolved_schema
 
@@ -313,9 +339,9 @@ with tab_sandbox:
     box_c1, box_c2 = st.columns(2)
     with box_c1:
         sb_company = st.text_input("Corporate Identifier Line", "CASTEL WINERY PLC")
-        sb_product = st.text_input("Product Designation Line", "ACACIA MEDIUM SWEET WHITE WINE")
-        sb_standard = st.text_input("Regulatory Protocol Tracking Code", "CES71:2021")
-        sb_client = st.text_input("Registered Enterprise Entity Reference", "ESML-CAMSWW-CA401550")
+        sb_product = st.text_input("Product Designation Line", "ACACIA MEDIUM SWEET RED WINE")
+        sb_standard = st.text_input("Regulatory Protocol Tracking Code", "CES 71:2021")
+        sb_client = st.text_input("Registered Enterprise Entity Reference", "ESML-CAMSRW-CA401548")
     with box_c2:
         sb_logo_upload = st.file_uploader("Upload National Certificate Logo Symbol Image", type=["png", "jpg", "jpeg"], key="sb_logo")
         sb_qr_upload = st.file_uploader("Upload Targeted Asset Matrix QR Reference", type=["png", "jpg", "jpeg"], key="sb_qr")
@@ -473,7 +499,7 @@ with tab_production:
                 st.error(f"Critical Runtime Exception Error: {str(system_pipeline_fault)}")
 
     # -------------------------------------------------------------------------
-    # DOWNLOAD CONSOLE DECK
+    # DUAL-FORMAT DOWNLOAD CONSOLE DECK
     # -------------------------------------------------------------------------
     if st.session_state.is_process_clean and st.session_state.zip_stream_bytes:
         st.markdown(
