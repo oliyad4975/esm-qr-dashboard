@@ -346,20 +346,7 @@ def render_compliance_label(
 ) -> Image.Image:
     """
     Compile assets into a structured compliance label layout.
-
-    Args:
-        qr_img: QR code PIL Image
-        logo_img: Logo PIL Image
-        company: Company name text
-        product: Product type text
-        standard: Standard reference number
-        client: Client code
-        width: Label width in pixels
-        height: Label height in pixels
-        base_font_size: Base font size (will be scaled up)
-
-    Returns:
-        Rendered label as PIL Image
+    Tight vertical packing: company at top, logo centered, metadata at bottom.
     """
     # Create white canvas
     label = Image.new("RGB", (width, height), color=(255, 255, 255))
@@ -369,79 +356,92 @@ def render_compliance_label(
     border_thickness = max(3, int(height * 0.008))
     _draw_border(draw, width, height, border_thickness)
 
-    # Calculate QR dimensions and position
+    # Calculate QR dimensions and position — QR fills most of the height
     qr_dim = int(height * 0.86)
     qr_x = border_thickness + int(width * 0.03)
     qr_y = (height - qr_dim) // 2
 
-    # Scale fonts
-    scaled_size = int(base_font_size * 1.8)
+    # Scale fonts — larger and bolder
+    scaled_size = int(base_font_size * 2.0)
     font_header = resolve_font(scaled_size, bold=True)
-    font_meta = resolve_font(int(scaled_size * 0.85), bold=True)
-    font_meta_bold = resolve_font(int(scaled_size * 0.90), bold=True)
+    font_meta = resolve_font(int(scaled_size * 0.90), bold=True)
+    font_meta_bold = resolve_font(int(scaled_size * 0.95), bold=True)
 
     # Calculate right column bounds
-    gap = int(scaled_size * 0.7)
+    gap = int(scaled_size * 0.5)
     right_x_start = qr_x + qr_dim + gap
     right_x_end = width - (border_thickness + int(width * 0.03))
     right_width = right_x_end - right_x_start
     right_center = right_x_start + (right_width // 2)
 
     # Text wrap limit
-    wrap_limit = max(16, int(right_width / (scaled_size * 0.6)))
+    wrap_limit = max(12, int(right_width / (scaled_size * 0.55)))
 
     # Draw QR code
     _draw_qr_code(label, qr_img, qr_x, qr_y, qr_dim)
 
-    # Draw header block (company name)
-    header_max_h = int(qr_dim * 0.35)  # Allocate max 35% of QR height for header
-    _, header_h = _draw_header_block(
-        draw, company, font_header, right_center, qr_y, wrap_limit, header_max_h
-    )
+    # === TOP BLOCK: Company Name (anchored to top of QR) ===
+    company_lines = textwrap.wrap(str(company).upper(), width=wrap_limit)
+    header_h = 0
+    y_cursor = qr_y
+    for line in company_lines:
+        bbox = draw.textbbox((0, 0), line, font=font_header)
+        line_w = bbox[2] - bbox[0]
+        line_h = bbox[3] - bbox[1]
+        draw.text((right_center - (line_w // 2), y_cursor), line, fill=(0, 0, 0), font=font_header)
+        spacing = line_h + int(qr_dim * 0.015)
+        y_cursor += spacing
+        header_h += spacing
 
-    # Prepare metadata items
-    meta_items: List[Tuple[str, ImageFont.FreeTypeFont]] = []
-
+    # === BOTTOM BLOCK: Metadata (anchored to bottom of QR) ===
+    meta_items = []
     if product and str(product).lower() != "nan":
         meta_items.append((str(product).upper(), font_meta_bold))
-
     if standard and str(standard).lower() != "nan":
         clean_std = re.sub(r"^STANDARD\s+R/NO:\s*", "", str(standard), flags=re.IGNORECASE).strip().upper()
         if clean_std:
             meta_items.append((clean_std, font_meta))
-
     if client and str(client).lower() != "nan":
         clean_client = re.sub(r"^CLIENT\s+CODE:\s*", "", str(client), flags=re.IGNORECASE).strip().upper()
         if clean_client:
             meta_items.append((clean_client, font_meta))
 
-    # Calculate metadata stack height
-    line_spacing = int(qr_dim * 0.015)
-    stack_height = sum(
-        (draw.textbbox((0, 0), text, font=font)[3] - draw.textbbox((0, 0), text, font=font)[1]) + line_spacing
-        for text, font in meta_items
-    )
+    # Calculate metadata stack height from bottom up
+    line_spacing = int(qr_dim * 0.012)
+    stack_height = 0
+    for text, font in meta_items:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        stack_height += (bbox[3] - bbox[1]) + line_spacing
 
-    # Bottom-align metadata with QR bottom edge
+    # Start metadata so it ends exactly at QR bottom edge
     meta_y_start = (qr_y + qr_dim) - stack_height
 
-    # Calculate logo space and position
-    available_logo_space = meta_y_start - (qr_y + header_h)
-    logo_dim = int(available_logo_space * 0.85)
-    max_logo = int(qr_dim * 0.40)
-    min_logo = int(qr_dim * 0.25)
+    # Draw metadata lines
+    y_cursor = meta_y_start
+    for text, font in meta_items:
+        text = text.strip()
+        if not text:
+            continue
+        bbox = draw.textbbox((0, 0), text, font=font)
+        item_w = bbox[2] - bbox[0]
+        item_h = bbox[3] - bbox[1]
+        draw.text((right_center - (item_w // 2), y_cursor), text, fill=(0, 0, 0), font=font)
+        y_cursor += item_h + line_spacing
+
+    # === MIDDLE BLOCK: Logo (centered in remaining space between header and metadata) ===
+    available_top = qr_y + header_h + int(qr_dim * 0.02)
+    available_bottom = meta_y_start - int(qr_dim * 0.02)
+    available_height = available_bottom - available_top
+
+    # Logo fills the available middle space tightly
+    logo_dim = int(available_height * 0.95)
+    max_logo = int(qr_dim * 0.55)
+    min_logo = int(qr_dim * 0.30)
     logo_dim = max(min_logo, min(logo_dim, max_logo))
 
-    logo_y = qr_y + header_h + ((available_logo_space - logo_dim) // 2)
+    logo_y = available_top + (available_height - logo_dim) // 2
 
-    # Draw logo
     _draw_logo(label, logo_img, right_center, logo_y, logo_dim)
-
-    # Draw metadata block
-    meta_start_y = max(meta_y_start, logo_y + logo_dim + int(qr_dim * 0.01))
-    _draw_metadata_block(
-        draw, meta_items, right_center, meta_start_y, line_spacing, qr_y + qr_dim - border_thickness
-    )
 
     return label
 
