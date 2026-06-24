@@ -916,7 +916,7 @@ with tab_production:
         )
     with c2:
         input_logo = st.file_uploader(
-            "2. Certification Logo",
+            "2. Standard Mark",
             type=["png", "jpg", "jpeg"],
             help="National standards mark or certification logo"
         )
