@@ -29,7 +29,7 @@ st.markdown("""
         background-color: #E0F2FE !important;
     }
     
-    /* 2. UNIVERSAL TAB CONTROLLER: Force absolute scannability across all Streamlit versions */
+    /* 2. UNIVERSAL TAB CONTROLLER */
     [data-baseweb="tab-list"], 
     div[data-testid="stTabBar"], 
     .stTabs [role="tablist"] {
@@ -39,7 +39,7 @@ st.markdown("""
         gap: 14px !important;
     }
 
-    /* 3. INITIAL / INACTIVE STATE: Enforce crisp black text with distinct border boxes */
+    /* 3. INITIAL / INACTIVE STATE */
     [data-baseweb="tab"], 
     div[data-testid="stTabBar"] button, 
     .stTabs [role="tab"] {
@@ -65,7 +65,7 @@ st.markdown("""
         background-color: #F1F5F9 !important;
     }
     
-    /* 4. ACTIVE STATE OVERRIDE: Shift theme dynamically upon user click selection */
+    /* 4. ACTIVE STATE OVERRIDE */
     [aria-selected="true"], 
     [data-baseweb="tab"][aria-selected="true"], 
     div[data-testid="stTabBar"] button[aria-selected="true"],
@@ -142,17 +142,25 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# HIGH-PRECISION DUAL-COLUMN COMPLIANCE CARD RENDER ENGINE (PROPORTIONAL)
+# HIGH-PRECISION BOUNDED DUAL-COLUMN COMPLIANCE CARD RENDER ENGINE
 # -------------------------------------------------------------------------
 def render_blueprint_compliance_label(
     qr_raw_img, logo_raw_img, company_txt, product_txt, standard_txt, client_txt, c_width, c_height, base_f_size
 ):
-    """Compiles assets into a structured layout matching the 'Good' design by anchoring to the QR footprint."""
+    """Compiles assets into a structured layout bound inside a clean rectangular container box with direct metadata values."""
     # Create pure white baseline canvas
     label_canvas = Image.new("RGB", (c_width, c_height), color=(255, 255, 255))
     draw_interface = ImageDraw.Draw(label_canvas)
 
-    # 1. QR Code Geometry Calculations (Left Column Anchor)
+    # DRAW ENCLOSING BOUNDING BOX BORDER
+    border_thickness = max(3, int(c_height * 0.008))
+    draw_interface.rectangle(
+        [(0, 0), (c_width - 1, c_height - 1)], 
+        outline=(0, 0, 0), 
+        width=border_thickness
+    )
+
+    # 1. QR Code Geometry Calculations (Left Column Anchor inside the border padding)
     qr_target_dim = int(c_height * 0.82)
     qr_x_origin = int(c_width * 0.06)
     qr_y_origin = (c_height - qr_target_dim) // 2
@@ -181,59 +189,67 @@ def render_blueprint_compliance_label(
         label_canvas.paste(qr_clean, (qr_x_origin, qr_y_origin), qr_clean)
 
     # 5. Render Right Hand Column Structural Component Stack (Anchored to QR Height)
-    # Target elements are scaled proportionally to qr_target_dim to preserve the exact layout layout profile
-    
     # Block A: Company Name Header Text Block (Positioned at Top Boundary of QR)
     y_text_cursor = qr_y_origin + int(qr_target_dim * 0.02)
     company_lines = textwrap.wrap(str(company_txt).upper(), width=text_wrap_limit)
     
+    header_height = 0
     for line in company_lines:
         left, top, right, bottom = draw_interface.textbbox((0, 0), line, font=font_header)
         line_w = right - left
         line_h = bottom - top
         draw_interface.text((right_column_center_x - (line_w // 2), y_text_cursor), line, fill=(0, 0, 0), font=font_header)
-        y_text_cursor += line_h + int(qr_target_dim * 0.02)
+        y_text_cursor += line_h + int(qr_target_dim * 0.015)
+        header_height += line_h + int(qr_target_dim * 0.015)
 
-    # Block B: Center Anchored Certification Scheme Logo (Scaled Proportional to QR Height)
-    logo_target_dim = int(qr_target_dim * 0.44)  # High-contrast 44% footprint match
-    logo_y_pos = qr_y_origin + ((qr_target_dim - logo_target_dim) // 2) - int(qr_target_dim * 0.02)
+    # Block C: Metadata Structural Block Stack Setup (Omits prefixes entirely; outputs raw values)
+    meta_stack_collection = []
+    if product_txt and str(product_txt).lower() != 'nan':
+        meta_stack_collection.append((str(product_txt).upper(), font_meta_bold))
+        
+    if standard_txt and str(standard_txt).lower() != 'nan':
+        # Strips prefix if manually entered in the sheet row, tracking only clean token data
+        clean_std_val = re.sub(r'^STANDARD\s+R/NO:\s*', '', str(standard_txt), flags=re.IGNORECASE).strip().upper()
+        meta_stack_collection.append((clean_std_val, font_metadata))
+        
+    if client_txt and str(client_txt).lower() != 'nan':
+        # Strips prefix if manually entered in the sheet row, tracking only clean token data
+        clean_client_val = re.sub(r'^CLIENT\s+CODE:\s*', '', str(client_txt), flags=re.IGNORECASE).strip().upper()
+        meta_stack_collection.append((clean_client_val, font_metadata))
+
+    # Calculate stack height to bottom-align perfectly with the lower edge of the QR code
+    line_spacing = int(qr_target_dim * 0.015)
+    estimated_stack_height = 0
+    for info_string, font_style in meta_stack_collection:
+        left, top, right, bottom = draw_interface.textbbox((0, 0), info_string, font=font_style)
+        estimated_stack_height += (bottom - top) + line_spacing
+
+    y_meta_start = (qr_y_origin + qr_target_dim) - estimated_stack_height
+
+    # Block B: Center Anchored Certification Scheme Logo (Dynamically scaled between Header and Metadata)
+    available_logo_space = y_meta_start - (qr_y_origin + header_height)
+    logo_target_dim = int(available_logo_space * 0.75) 
+    
+    max_logo_dim = int(qr_target_dim * 0.44)
+    min_logo_dim = int(qr_target_dim * 0.32)
+    logo_target_dim = max(min_logo_dim, min(logo_target_dim, max_logo_dim))
+
+    logo_y_pos = qr_y_origin + header_height + ((available_logo_space - logo_target_dim) // 2)
     
     if logo_raw_img:
         logo_clean = logo_raw_img.convert("RGBA").resize((logo_target_dim, logo_target_dim), Image.Resampling.LANCZOS)
         logo_x_pos = right_column_center_x - (logo_target_dim // 2)
         label_canvas.paste(logo_clean, (logo_x_pos, logo_y_pos), logo_clean)
 
-    # Block C: Metadata Structural Block Stack (Aligned with Bottom Footprint of QR)
-    meta_stack_collection = []
-    if product_txt and str(product_txt).lower() != 'nan':
-        meta_stack_collection.append((str(product_txt).upper(), font_meta_bold))
-        
-    if standard_txt and str(standard_txt).lower() != 'nan':
-        std_val = str(standard_txt).upper()
-        display_std = f"STANDARD R/NO: {std_val}" if "STANDARD" not in std_val else std_val
-        meta_stack_collection.append((display_std, font_metadata))
-        
-    if client_txt and str(client_txt).lower() != 'nan':
-        client_val = str(client_txt).upper()
-        display_client = f"CLIENT CODE: {client_val}" if "CLIENT" not in client_val else client_val
-        meta_stack_collection.append((display_client, font_metadata))
-
-    # Calculate stack height to bottom-align perfectly
-    estimated_stack_height = len(meta_stack_collection) * (int(base_f_size * 0.72) + int(qr_target_dim * 0.015))
-    y_text_cursor = (qr_y_origin + qr_target_dim) - estimated_stack_height - int(qr_target_dim * 0.02)
-    
-    # Fallback to prevent overlapping with logo area
-    min_allowable_y = logo_y_pos + logo_target_dim + int(qr_target_dim * 0.02)
-    if y_text_cursor < min_allowable_y:
-        y_text_cursor = min_allowable_y
-
+    # Render Metadata lines using the calculated lower layout position
+    y_text_cursor = max(y_meta_start, logo_y_pos + logo_target_dim + int(qr_target_dim * 0.02))
     for info_string, font_style in meta_stack_collection:
         if info_string.strip():
             left, top, right, bottom = draw_interface.textbbox((0, 0), info_string, font=font_style)
             item_w = right - left
             item_h = bottom - top
             draw_interface.text((right_column_center_x - (item_w // 2), y_text_cursor), info_string, fill=(0, 0, 0), font=font_style)
-            y_text_cursor += item_h + int(qr_target_dim * 0.015)
+            y_text_cursor += item_h + line_spacing
 
     return label_canvas
 
@@ -314,7 +330,6 @@ ui_font_sz = st.sidebar.slider("Base Label Font Size", 16, 60, 34, step=2)
 st.sidebar.markdown("---")
 ui_disk_path = st.sidebar.text_input("Local Output Directory Target Path", value="output/esm_labels/")
 
-# Shaded Tab Interfaces generated natively via advanced CSS dynamic injector block above
 tab_production, tab_sandbox = st.tabs(["🚀 Automated Pipeline Room", "🔍 Live Vector Structural Sandbox"])
 
 # 1. LIVE SANDBOX CALIBRATION TAB
@@ -337,7 +352,7 @@ with tab_sandbox:
                 sb_company, sb_product, sb_standard, sb_client,
                 ui_width, ui_height, ui_font_sz
             )
-            st.image(preview_image_result, caption="Calculated Frame Layout Output Matrix Grid", use_container_width=True)
+            st.image(preview_image_result, caption="Calculated frame Layout Output Matrix Grid", use_container_width=True)
         else:
             st.error("Please provide validation upload images.")
 
@@ -449,7 +464,6 @@ with tab_production:
                                 final_compiled_vector.save(internal_img_ram_buffer, format="JPEG", quality=95)
                                 zip_envelope.writestr(export_file_name, internal_img_ram_buffer.getvalue())
 
-                                # Convert the byte-stream to ReportLab ImageReader format safely
                                 internal_img_ram_buffer.seek(0)
                                 wrapped_pdf_image = ImageReader(internal_img_ram_buffer)
                                 
@@ -491,7 +505,7 @@ with tab_production:
             f"""
             <div class='success-panel'>
                 <h4 style='color: #15A34A; margin-top: 0;'>✅ Automated Multi-Field Pipeline Generation Complete</h4>
-                <p style='color: #1F2937; margin-bottom: 0;'>Processed and compiled <b>{st.session_state.total_compiled}</b> compliance card assets.</p>
+                <p style='color: #1F2937; margin-bottom: 0;'>Processed and compiled <b>{st.session_state.total_compiled}</b> compliance card assets bound in uniform boxes.</p>
             </div>
         """,
             unsafe_allow_html=True,
