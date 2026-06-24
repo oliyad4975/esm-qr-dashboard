@@ -360,7 +360,7 @@ def render_compliance_label(
     qr_y = (height - qr_dim) // 2
 
     # Right column
-    gap = int(width * 0.03)
+    gap = int(width * 0.06)
     right_x_start = qr_x + qr_dim + gap
     right_x_end = width - (border_thickness + int(width * 0.025))
     right_width = right_x_end - right_x_start
@@ -371,7 +371,7 @@ def render_compliance_label(
     # Font sizes proportional to QR height for readability
     header_font_size = int(qr_dim * 0.12)
     header_font_size = max(header_font_size, int(base_font_size * 3.0))
-    header_font = resolve_font(header_font_size, bold=True)
+    header_font = resolve_font(company_font_size, bold=True)
 
     meta_font_size = int(qr_dim * 0.09)
     meta_font_size = max(meta_font_size, int(base_font_size * 2.2))
