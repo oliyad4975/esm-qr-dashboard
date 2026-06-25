@@ -347,10 +347,11 @@ def render_compliance_label(
     """
     Compile assets into a structured compliance label layout.
     Tight vertical packing matching reference image:
-    - Company name at top, flush with QR top edge
+    - Company name at top, flush with QR top edge (SINGLE LINE)
     - Logo centered in remaining middle space, large
     - Metadata tightly packed at bottom, flush with QR bottom edge
     - Minimal gaps, all bold text
+    - ALL text and logo STRICTLY between QR top and bottom edges (red lines)
     """
     # Create white canvas
     label = Image.new("RGB", (width, height), color=(255, 255, 255))
@@ -384,18 +385,25 @@ def render_compliance_label(
     # Draw QR code
     _draw_qr_code(label, qr_img, qr_x, qr_y, qr_dim)
 
-    # === TOP BLOCK: Company Name (anchored flush to QR top edge) ===
-    company_lines = textwrap.wrap(str(company).upper(), width=wrap_limit)
-    header_h = 0
-    y_cursor = qr_y
-    for line in company_lines:
-        bbox = draw.textbbox((0, 0), line, font=font_header)
-        line_w = bbox[2] - bbox[0]
-        line_h = bbox[3] - bbox[1]
-        draw.text((right_center - (line_w // 2), y_cursor), line, fill=(0, 0, 0), font=font_header)
-        spacing = line_h + int(qr_dim * 0.01)
-        y_cursor += spacing
-        header_h += spacing
+    # === TOP BLOCK: Company Name (anchored flush to QR top edge, SINGLE LINE) ===
+    company_text = str(company).upper().strip()
+    max_company_width = int(right_width * 0.95)
+
+    # Start with desired font size, shrink until it fits in ONE LINE
+    company_font_size = scaled_size
+    company_font = resolve_font(company_font_size, bold=True)
+    bbox = draw.textbbox((0, 0), company_text, font=company_font)
+    text_w = bbox[2] - bbox[0]
+
+    while text_w > max_company_width and company_font_size > 8:
+        company_font_size -= 1
+        company_font = resolve_font(company_font_size, bold=True)
+        bbox = draw.textbbox((0, 0), company_text, font=company_font)
+        text_w = bbox[2] - bbox[0]
+
+    line_h = bbox[3] - bbox[1]
+    draw.text((right_center - (text_w // 2), qr_y), company_text, fill=(0, 0, 0), font=company_font)
+    header_h = line_h + int(qr_dim * 0.01)
 
     # === BOTTOM BLOCK: Metadata (anchored flush to QR bottom edge) ===
     meta_items = []
@@ -417,8 +425,8 @@ def render_compliance_label(
         bbox = draw.textbbox((0, 0), text, font=font)
         stack_height += (bbox[3] - bbox[1]) + line_spacing
 
-    # Start metadata so it ends exactly at QR bottom edge
-    meta_y_start = (qr_y + qr_dim) - stack_height
+    # Start metadata so it ends exactly at QR bottom edge, NEVER above QR top
+    meta_y_start = max(qr_y, (qr_y + qr_dim) - stack_height)
 
     # Draw metadata lines
     y_cursor = meta_y_start
@@ -438,7 +446,7 @@ def render_compliance_label(
     available_height = available_bottom - available_top
     available_width = right_width
 
-    # Logo should fill as much space as possible
+    # Logo should fill as much space as possible but stay within bounds
     if logo_img is not None and available_height > 10 and available_width > 10:
         # Determine best fit: scale to fit within available width and height
         logo_ratio = logo_img.width / logo_img.height
@@ -446,12 +454,16 @@ def render_compliance_label(
 
         if logo_ratio > avail_ratio:
             # Logo is wider relative to available space — fit to width
-            logo_w = int(available_width * 0.88)
+            logo_w = int(available_width * 0.75)
             logo_h = int(logo_w / logo_ratio)
         else:
             # Logo is taller — fit to height
-            logo_h = int(available_height * 0.88)
+            logo_h = int(available_height * 0.75)
             logo_w = int(logo_h * logo_ratio)
+
+        # Clamp to available space to prevent overflow
+        logo_w = min(logo_w, available_width)
+        logo_h = min(logo_h, available_height)
 
         # Center the logo in the available space
         logo_x = right_x_start + (available_width - logo_w) // 2
@@ -1024,7 +1036,7 @@ with tab_production:
             st.download_button(
                 label="📄 Download PDF Register",
                 data=st.session_state.pdf_bytes,
-                file_name="dsm_batch_register.pdf",
+                file_name="IES_dsm_batch_register.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
