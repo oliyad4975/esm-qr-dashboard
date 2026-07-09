@@ -33,7 +33,7 @@ os.makedirs("output", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
 # -------------------------------------------------------------------------
-# FIXED SIZING ENGINE (EQUAL VERTICAL SPANS & ROBUST FONTS)
+# BALANCED SYMMETRIC ENGINE (BERNARD MT CONDENSED)
 # -------------------------------------------------------------------------
 def render_compliance_label(qr_img, logo_img, company, product, standard, client, width, height, font_sz):
     """
@@ -51,36 +51,38 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     # Draw Thick Outer Border Frame Boundary
     draw.rectangle([15, 15, canvas_w - 15, canvas_h - 15], outline="black", width=5)
     
-    # SYSTEM FONT ACQUISITION: Search for Bernard MT Condensed across standard OS pathways
-    font_name = "BERNHC.TTF"  # Standard Windows filename for Bernard MT Condensed
-    system_font_paths = [
-        font_name,  # Checks root GitHub deployment repository first
-        os.path.join(".", font_name),
-        os.path.join("C:\\", "Windows", "Fonts", font_name),
-        os.path.join("C:\\", "Windows", "Fonts", "Bernard MT Condensed.ttf"),
-        os.path.join("/Library/Fonts", font_name),
-        os.path.join("~/.fonts", font_name)
-    ]
-    
+    # SYSTEM FONT ACQUISITION: Strict explicit absolute path mapping for Linux Cloud Nodes
     font_loaded = None
     using_fallback = False
-    
-    # Dynamic scaling optimized for high visibility alignment
     target_size = int(font_sz) if font_sz else 32
+
+    # Look directly at the current running repository directory folder root
+    current_dir = Path(__file__).parent.absolute()
     
-    for path in system_font_paths:
-        try:
-            if os.path.exists(path):
-                font_loaded = ImageFont.truetype(path, target_size)
+    # Check for lowercase, uppercase, and exact file structures to eliminate Linux mismatches
+    potential_font_locations = [
+        current_dir / "BERNHC.TTF",
+        current_dir / "bernhc.ttf",
+        current_dir / "Bernard MT Condensed.ttf",
+        Path("BERNHC.TTF"),
+        Path("bernhc.ttf")
+    ]
+    
+    for font_path in potential_font_locations:
+        if font_path.is_file():
+            try:
+                font_loaded = ImageFont.truetype(str(font_path), target_size)
+                st.sidebar.success(f"Successfully loaded font asset: {font_path.name}")
                 break
-        except Exception:
-            continue
-            
+            except Exception:
+                continue
+
     if not font_loaded:
         try:
             # Fallback to default engine with an inflated size to keep design proportion
             font_loaded = ImageFont.load_default()
             using_fallback = True
+            st.sidebar.warning("Font file not parsed. Utilizing structural baseline engine.")
         except Exception:
             font_loaded = None
 
@@ -96,7 +98,7 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     # Balanced Center Axis for the Right Column components
     right_center_x = 582  
     
-    # Determine stroke thickness to forcefully prevent default text shrinkage in Linux
+    # Force heavy formatting look even if font fallback triggers
     stroke_val = 1 if using_fallback else 0
     
     # Top Client Header - Positioned safely inside the top margin tracking frame (Y=70)
@@ -117,7 +119,6 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     display_standard = str(standard if standard else "CES / ISO STANDARD")
     display_batch = "ESML-SHFADW-CA300213"
     
-    # If font is falling back, spacing is dynamically scaled to keep things compact
     gap = 22 if using_fallback else 28
     
     draw.text((right_center_x, 325), display_product, fill="black", anchor="mm", font=font_loaded, stroke_width=stroke_val)
