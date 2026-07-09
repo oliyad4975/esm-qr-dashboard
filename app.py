@@ -33,12 +33,12 @@ os.makedirs("output", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
 # -------------------------------------------------------------------------
-# BALANCED SYMMETRIC ENGINE (BERNARD MT CONDENSED)
+# FIXED SIZING ENGINE (EQUAL VERTICAL SPANS & ROBUST FONTS)
 # -------------------------------------------------------------------------
 def render_compliance_label(qr_img, logo_img, company, product, standard, client, width, height, font_sz):
     """
-    Renders a mathematically balanced preview image with matching left and right 
-    outer margins, incorporating the corporate Bernard MT Condensed font profile.
+    Renders a high-resolution preview image with matching left and right outer margins, 
+    incorporating a robust Bernard MT Condensed font profile tracker.
     """
     # High-DPI canvas layout matching production specifications
     canvas_w = 800
@@ -54,7 +54,8 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     # SYSTEM FONT ACQUISITION: Search for Bernard MT Condensed across standard OS pathways
     font_name = "BERNHC.TTF"  # Standard Windows filename for Bernard MT Condensed
     system_font_paths = [
-        font_name,
+        font_name,  # Checks root GitHub deployment repository first
+        os.path.join(".", font_name),
         os.path.join("C:\\", "Windows", "Fonts", font_name),
         os.path.join("C:\\", "Windows", "Fonts", "Bernard MT Condensed.ttf"),
         os.path.join("/Library/Fonts", font_name),
@@ -62,26 +63,28 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     ]
     
     font_loaded = None
-    # Dynamic scaling based on sidebar font configuration context
-    target_size = int(font_sz) if font_sz else 26
+    using_fallback = False
+    
+    # Dynamic scaling optimized for high visibility alignment
+    target_size = int(font_sz) if font_sz else 32
     
     for path in system_font_paths:
         try:
-            font_loaded = ImageFont.truetype(os.path.expanduser(path), target_size)
-            break
+            if os.path.exists(path):
+                font_loaded = ImageFont.truetype(path, target_size)
+                break
         except Exception:
             continue
             
     if not font_loaded:
         try:
+            # Fallback to default engine with an inflated size to keep design proportion
             font_loaded = ImageFont.load_default()
+            using_fallback = True
         except Exception:
             font_loaded = None
 
     # 1. HORIZONTAL MARGIN BALANCING MATRIX
-    # QR code width is 360. Margin Left = 35 -> QR right edge sits at 395.
-    # Total right zone width = 800 - 395 = 405. 
-    # Center axis for right content to maintain identical 35px margin on the right edge:
     qr_box_size = 360
     qr_top_y = (canvas_h - qr_box_size) // 2  # 45
     
@@ -93,9 +96,12 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     # Balanced Center Axis for the Right Column components
     right_center_x = 582  
     
+    # Determine stroke thickness to forcefully prevent default text shrinkage in Linux
+    stroke_val = 1 if using_fallback else 0
+    
     # Top Client Header - Positioned safely inside the top margin tracking frame (Y=70)
     display_company = str(company if company else (client if client else "REGISTERED CLIENT PLC"))
-    draw.text((right_center_x, 70), display_company, fill="black", anchor="mm", font=font_loaded, stroke_width=1 if not font_loaded or font_loaded.path == font_name else 0)
+    draw.text((right_center_x, 70), display_company, fill="black", anchor="mm", font=font_loaded, stroke_width=stroke_val)
     
     # Center: Scaled National Standard Mark Logo (Symmetric spacing)
     logo_size = 180
@@ -111,9 +117,12 @@ def render_compliance_label(qr_img, logo_img, company, product, standard, client
     display_standard = str(standard if standard else "CES / ISO STANDARD")
     display_batch = "ESML-SHFADW-CA300213"
     
-    draw.text((right_center_x, 325), display_product, fill="black", anchor="mm", font=font_loaded, stroke_width=1 if not font_loaded or font_loaded.path == font_name else 0)
-    draw.text((right_center_x, 353), display_standard, fill="black", anchor="mm", font=font_loaded, stroke_width=1 if not font_loaded or font_loaded.path == font_name else 0)
-    draw.text((right_center_x, 381), display_batch, fill="black", anchor="mm", font=font_loaded, stroke_width=1 if not font_loaded or font_loaded.path == font_name else 0)
+    # If font is falling back, spacing is dynamically scaled to keep things compact
+    gap = 22 if using_fallback else 28
+    
+    draw.text((right_center_x, 325), display_product, fill="black", anchor="mm", font=font_loaded, stroke_width=stroke_val)
+    draw.text((right_center_x, 325 + gap), display_standard, fill="black", anchor="mm", font=font_loaded, stroke_width=stroke_val)
+    draw.text((right_center_x, 325 + (gap * 2)), display_batch, fill="black", anchor="mm", font=font_loaded, stroke_width=stroke_val)
     
     return img
 
@@ -132,7 +141,7 @@ st.sidebar.subheader("Layout Optimization Adjustments")
 
 ui_width = st.sidebar.slider("Label Width (px)", 800, 2400, 1200, step=100, key="sidebar_label_width_slider")
 ui_height = st.sidebar.slider("Label Height (px)", 400, 1200, 600, step=50, key="sidebar_label_height_slider")
-ui_font_sz = st.sidebar.slider("Metadata Font Scale", 12, 48, 24, step=2, key="sidebar_font_size_slider")
+ui_font_sz = st.sidebar.slider("Metadata Font Scale", 12, 48, 32, step=2, key="sidebar_font_size_slider")
 
 # -------------------------------------------------------------------------
 # CENTRAL WORKSPACE ENVIRONMENT
@@ -164,7 +173,7 @@ with col_view:
                 qr = Image.open(sb_qr)
                 
                 preview = render_compliance_label(qr, logo, sb_company, sb_product, sb_standard, sb_client, ui_width, ui_height, ui_font_sz)
-                st.image(preview, caption="Label Verification Preview (Symmetric Bernard MT Condensed)", use_container_width=True)
+                st.image(preview, caption="Label Verification Preview (Balanced Bernard MT Mode)", use_container_width=True)
                 st.success("Symmetric margins balanced perfectly across border frames.")
             except Exception as e:
                 st.error(f"Preview generation failed: {e}")
