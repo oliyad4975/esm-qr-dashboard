@@ -6,3 +6,16 @@ venv/
 
 # Ignore executables
 cloudflared.exe
+# =========================================================================
+# INSTITUTIONAL SECURITY & TEMPORARY BUILD EXCLUSIONS
+# =========================================================================
+# Exclude local IAM credentials vault
+.streamlit/secrets.toml
+
+# Exclude generated bulk output assets and archives
+output/
+*.zip
+
+# Exclude runtime temporary images to preserve repository cleanliness
+static/temp_logo.png
+static/temp_qr.png
