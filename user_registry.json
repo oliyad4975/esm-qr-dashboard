@@ -1,0 +1,32 @@
+{
+    "oliyad4975@yahoo.com": {
+        "role": "Admin",
+        "name": "Oliyad Lencho Desure",
+        "password": "LL33",
+        "verified": true
+    },
+    "operator@ies.gov.et": {
+        "role": "User",
+        "name": "Technical Officer",
+        "password": "1234",
+        "verified": true
+    },
+    "guest@ies.gov.et": {
+        "role": "Guest",
+        "name": "Institutional Observer",
+        "password": "1234",
+        "verified": true
+    },
+    "mulualemdesure@gmail.com": {
+        "role": "User",
+        "name": "LL",
+        "password": "LL22",
+        "verified": true
+    },
+    "oliy4len@gmail.com": {
+        "role": "User",
+        "name": "AJEX",
+        "password": "LL22",
+        "verified": true
+    }
+}

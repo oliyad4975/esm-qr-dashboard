@@ -1,0 +1,7 @@
+[theme]
+base = "light"
+primaryColor = "#0047AB" # Professional Institutional Blue
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F7F9"
+textColor = "#262730"
+font = "sans serif"
