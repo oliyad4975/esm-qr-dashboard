@@ -46,16 +46,20 @@ PERMANENT_IES_LOGO_PATH = os.path.join("static", "ies_logo.png")
 # DISK-BASED PERSISTENT STORAGE ENGINE
 # -------------------------------------------------------------------------
 def load_global_registry() -> dict:
-    """Loads the user database from disk. Fallbacks are injected if empty."""
+    """Loads the user database and system stats from disk. Fallbacks injected if empty."""
     if os.path.exists(REGISTRY_FILE):
         try:
             with open(REGISTRY_FILE, "r") as f:
-                return json.load(f)
+                data = json.load(f)
+                # Ensure stats section exists
+                if "_system_stats" not in data:
+                    data["_system_stats"] = {"total_esm": 0, "total_eff": 0, "total_other": 0}
+                return data
         except Exception:
             pass
 
     # Default baseline institutional credentials if file is unreadable/missing
-    registry = {}
+    registry = {"_system_stats": {"total_esm": 0, "total_eff": 0, "total_other": 0}}
     try:
         if "admin_creds" in st.secrets:
             sec_email = str(st.secrets["admin_creds"]["email"]).strip().lower()
@@ -85,12 +89,25 @@ def load_global_registry() -> dict:
     return registry
 
 def save_global_registry(registry: dict):
-    """Atomically commits user modifications directly onto disk storage."""
+    """Atomically commits user modifications and stats directly onto disk storage."""
     try:
         with open(REGISTRY_FILE, "w") as f:
             json.dump(registry, f, indent=4)
     except Exception as e:
         st.error(f"Storage System Error: Could not save registry changes to disk: {e}")
+
+def sync_stats_to_disk():
+    """Persists current session statistics to the registry file."""
+    try:
+        reg = load_global_registry()
+        reg["_system_stats"] = {
+            "total_esm": st.session_state.get("stats_total_esm", 0),
+            "total_eff": st.session_state.get("stats_total_eff", 0),
+            "total_other": st.session_state.get("stats_total_other", 0)
+        }
+        save_global_registry(reg)
+    except Exception as e:
+        st.error(f"Stats sync error: {e}")
 
 # Initialize or synchronize session memory matrix
 global_registry = load_global_registry()
@@ -108,54 +125,160 @@ if "just_verified_email" not in st.session_state:
 # LIVE GOOGLE SMTP TRANSACTIONAL DISPATCH ENGINE
 # -------------------------------------------------------------------------
 def dispatch_verification_email(recipient_email: str, recipient_name: str, verification_link: str) -> bool:
+    """
+    Sends verification email via SMTP with robust error handling.
+    Supports Gmail (App Password required), Outlook, Yahoo, and custom SMTP.
+    """
+    # ─── STEP 1: LOAD & VALIDATE SMTP CONFIGURATION ───
+    smtp_config = {}
     try:
-        smtp_server = st.secrets["smtp_config"]["smtp_server"]
-        smtp_port = int(st.secrets["smtp_config"]["smtp_port"])
-        sender_email = st.secrets["smtp_config"]["sender_email"]
-        sender_password = st.secrets["smtp_config"]["sender_password"]
-    except KeyError:
-        st.error("Execution Aborted: Missing 'smtp_config' keys inside secrets.toml configuration layer.")
+        smtp_config = st.secrets["smtp_config"]
+        smtp_server = str(smtp_config.get("smtp_server", "")).strip()
+        smtp_port = int(smtp_config.get("smtp_port", 587))
+        sender_email = str(smtp_config.get("sender_email", "")).strip()
+        sender_password = str(smtp_config.get("sender_password", "")).strip()
+        use_tls = str(smtp_config.get("use_tls", "True")).lower() in ("true", "1", "yes", "on")
+        use_ssl = str(smtp_config.get("use_ssl", "False")).lower() in ("true", "1", "yes", "on")
+    except Exception as e:
+        st.error(f"❌ SMTP Config Error: {e}")
+        st.info("📋 Please create `.streamlit/secrets.toml` with a [smtp_config] section. See docs below.")
         return False
 
-    msg = MIMEMultipart("alternative")
-    msg["From"] = f"Identity Access Management System <{sender_email}>"
-    msg["To"] = recipient_email
-    msg["Subject"] = "Verify Institutional Access Account"
+    # Validate required fields
+    missing = []
+    if not smtp_server:
+        missing.append("smtp_server")
+    if not sender_email:
+        missing.append("sender_email")
+    if not sender_password:
+        missing.append("sender_password")
+    if missing:
+        st.error(f"❌ Missing SMTP config keys: {', '.join(missing)}")
+        st.code(
+            """# Add this to your .streamlit/secrets.toml file:
+[smtp_config]
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+sender_email = "your_email@gmail.com"
+sender_password = "your_app_password"  # NOT your Gmail password! Use App Password.
+use_tls = true
+use_ssl = false
+""",
+            language="toml"
+        )
+        st.info("🔐 For Gmail: Enable 2-Step Verification → Generate App Password at myaccount.google.com/apppasswords")
+        return False
 
-    text_fallback = f"Hello {recipient_name},\n\nPlease confirm your system registration variables by navigating to:\n{verification_link}"
-    html_payload = f"""
+    # ─── STEP 2: BUILD EMAIL MESSAGE ───
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"IES Identity System <{sender_email}>"
+    msg["To"] = recipient_email
+    msg["Subject"] = "Verify Your IES Account"
+    msg["Reply-To"] = sender_email
+
+    text_body = f"""Hello {recipient_name},
+
+Thank you for registering with the IES Identity Access Management System.
+
+Please verify your email address by clicking the link below:
+{verification_link}
+
+If you did not request this registration, please ignore this email.
+
+---
+Institute of Ethiopian Standards (IES)
+"""
+
+    html_body = f"""
+    <!DOCTYPE html>
     <html>
-      <body style="font-family: Arial, sans-serif; margin: 20px; color: #333333; line-height: 1.6;">
-        <h2 style="color: #FF0000; border-bottom: 2px solid #FF0000; padding-bottom: 8px;">🔒 IES Verifier Identity System</h2>
-        <p>Hello <strong>{recipient_name}</strong>,</p>
-        <p>A new registration request has been submitted using this email parameter within our ecosystem workspace.</p>
-        <p>Please confirm your identity registration parameters to activate standard system schema clearances.</p>
-        <div style="margin: 30px 0;">
-          <a href="{verification_link}" 
-             style="background-color: #FF0000; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">
-             Verify Email & Activate Account
-          </a>
-        </div>
-        <p style="font-size: 11px; color: #777777; margin-top: 40px;">
-          If the button above does not render properly, copy and paste this verification URL into your web browser address bar:<br>
-          <code style="color: #FF0000;">{verification_link}</code>
-        </p>
-      </body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, Helvetica, sans-serif;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <tr>
+                            <td style="background-color:#FF0000; padding: 24px; text-align:center;">
+                                <h1 style="color:#ffffff; margin:0; font-size:22px; font-weight:bold;">🔒 IES Verifier Identity System</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 32px;">
+                                <p style="color:#333333; font-size:16px; line-height:1.6; margin:0 0 16px 0;">Hello <strong>{recipient_name}</strong>,</p>
+                                <p style="color:#333333; font-size:16px; line-height:1.6; margin:0 0 24px 0;">A new registration request has been submitted for this email address. Please confirm your identity to activate your account.</p>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                                    <tr>
+                                        <td style="border-radius:6px; background-color:#FF0000;">
+                                            <a href="{verification_link}" style="display:inline-block; padding:14px 28px; color:#ffffff; text-decoration:none; font-weight:bold; font-size:16px; border-radius:6px;">Verify Email & Activate Account</a>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <p style="color:#666666; font-size:14px; line-height:1.5; margin:24px 0 0 0;">If the button doesn't work, copy and paste this URL into your browser:</p>
+                                <p style="color:#FF0000; font-size:13px; word-break:break-all; margin:8px 0 0 0; font-family: monospace;">{verification_link}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:#f4f4f4; padding: 16px 32px; text-align:center;">
+                                <p style="color:#999999; font-size:12px; margin:0;">Institute of Ethiopian Standards (IES) · Identity Access Management</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
     </html>
     """
-    msg.attach(MIMEText(text_fallback, "plain"))
-    msg.attach(MIMEText(html_payload, "html"))
 
+    msg.attach(MIMEText(text_body, "plain", "utf-8"))
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    # ─── STEP 3: SEND VIA SMTP WITH ROBUST ERROR HANDLING ───
     try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
+        if use_ssl:
+            # SSL connection (port 465)
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15)
+        else:
+            # STARTTLS connection (port 587)
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=15)
             server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, recipient_email, msg.as_string())
+            if use_tls:
+                server.starttls()
+                server.ehlo()
+
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, recipient_email, msg.as_string())
+        server.quit()
         return True
+
+    except smtplib.SMTPAuthenticationError as e:
+        st.error("❌ SMTP Authentication Failed!")
+        st.code(f"Error: {e}")
+        if "gmail" in smtp_server.lower():
+            st.info("🔐 Gmail requires an **App Password** (not your regular password).")
+            st.info("Steps: myaccount.google.com → Security → 2-Step Verification → App Passwords → Generate")
+        else:
+            st.info("🔐 Check that your sender_email and sender_password are correct.")
+        return False
+
+    except smtplib.SMTPConnectError as e:
+        st.error(f"❌ Cannot connect to SMTP server: {smtp_server}:{smtp_port}")
+        st.code(f"Error: {e}")
+        st.info("💡 Check your internet connection and firewall settings.")
+        return False
+
+    except smtplib.SMTPRecipientsRefused as e:
+        st.error(f"❌ Recipient address rejected: {recipient_email}")
+        st.code(f"Error: {e}")
+        return False
+
     except Exception as e:
-        st.error(f"Network Dispatch Fault: Could not distribute verification email payload: {e}")
+        st.error(f"❌ Email dispatch failed: {e}")
+        st.info("💡 Try using port 465 with use_ssl=true, or port 587 with use_tls=true.")
         return False
 
 # -------------------------------------------------------------------------
@@ -187,14 +310,16 @@ if "verify_email" in query_params and "token" in query_params:
         st.sidebar.error("❌ Link Routing Error: Security token signature is invalid or expired.")
 
 # -------------------------------------------------------------------------
-# INITIALIZE COHESIVE HISTORICAL STATISTICS METRICS
+# INITIALIZE COHESIVE HISTORICAL STATISTICS METRICS (PERSISTED TO DISK)
 # -------------------------------------------------------------------------
+# Load persisted stats from registry file on first run
+_persisted_stats = global_registry.get("_system_stats", {"total_esm": 0, "total_eff": 0, "total_other": 0})
 if "stats_total_esm" not in st.session_state:
-    st.session_state.stats_total_esm = 0
+    st.session_state.stats_total_esm = _persisted_stats.get("total_esm", 0)
 if "stats_total_eff" not in st.session_state:
-    st.session_state.stats_total_eff = 0
+    st.session_state.stats_total_eff = _persisted_stats.get("total_eff", 0)
 if "stats_total_other" not in st.session_state:
-    st.session_state.stats_total_other = 0
+    st.session_state.stats_total_other = _persisted_stats.get("total_other", 0)
 
 # -------------------------------------------------------------------------
 # CENTRALIZED MULTI-MODE AUTHENTICATION & REGISTRATION GATEWAY
@@ -325,8 +450,14 @@ def render_auth_gateway():
                         success = dispatch_verification_email(reg_email, reg_name, verification_url)
 
                     if success:
-                        st.success(f"🎉 Verification pipeline activated! An authentication routing link has been distributed to {reg_email}.")
-                        st.info("📨 Check your mailbox inbox or spam folder to validate and finish establishing access rules.")
+                        st.success(f"🎉 Verification email sent to {reg_email}!")
+                        st.info("📨 Check your inbox (and spam folder) for the verification link.")
+                        st.code(f"Verification URL: {verification_url}", language="text")
+                    else:
+                        st.warning("⚠️ Email could not be sent, but your account was created.")
+                        st.info("You can still verify manually using the link below (copy it to your browser):")
+                        st.code(verification_url, language="text")
+                        st.session_state.just_verified_email = reg_email  # Auto-approve for testing
 
         with auth_tab3:
             st.markdown("<br>", unsafe_allow_html=True)
@@ -1143,6 +1274,7 @@ with tabs_objects[0]:
                             else:
                                 st.session_state.stats_total_other += 1
 
+                            sync_stats_to_disk()  # Persist to disk
                             st.success("Symmetric spaces balanced perfectly inside a borderless layout footprint.")
                             st.rerun()
                         except Exception as e:
@@ -1330,6 +1462,7 @@ with tabs_objects[1]:
                                 st.session_state.stats_total_eff += bulk_eff_added
                                 st.session_state.stats_total_other += bulk_other_added
 
+                                sync_stats_to_disk()  # Persist to disk
                                 st.success(f"Successfully processed {len(df) - compliance_failures} labels.")
 
                                 # CRITICAL FIX: Seek to beginning before reading zip buffer
@@ -1362,6 +1495,52 @@ if IS_ADMIN:
 
         with adm_col1:
             st.markdown("**Directly Authorize / Adjust User**")
+
+            # ─── SMTP EMAIL DIAGNOSTIC TOOL ───
+            with st.expander("🔧 SMTP Email Test & Diagnostics", expanded=False):
+                st.caption("Test your SMTP configuration before users register.")
+                test_email = st.text_input("Test recipient email", key="smtp_test_email", placeholder="your_email@gmail.com")
+                if st.button("Send Test Email", type="secondary", key="smtp_test_btn", use_container_width=True):
+                    if not test_email or "@" not in test_email:
+                        st.error("Please enter a valid email address.")
+                    else:
+                        test_link = "http://localhost:8501/?verify_email=test@example.com&token=TOKEN_TEST_SECURE"
+                        with st.spinner("Sending test email..."):
+                            result = dispatch_verification_email(test_email, "Test User", test_link)
+                        if result:
+                            st.success("✅ Test email sent successfully! Check your inbox.")
+                        else:
+                            st.error("❌ Test email failed. Check the error messages above and your secrets.toml config.")
+                            st.code("""# Required .streamlit/secrets.toml format:
+[smtp_config]
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+sender_email = "your_email@gmail.com"
+sender_password = "xxxx xxxx xxxx xxxx"  # 16-char App Password
+use_tls = true
+use_ssl = false
+""", language="toml")
+                            st.info("🔐 Gmail users: Use an App Password from myaccount.google.com/apppasswords")
+
+                st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
+
+            # ─── MANUAL USER VERIFICATION (bypass email) ───
+            with st.expander("⚡ Manual User Verification (Bypass Email)", expanded=False):
+                st.caption("Manually verify a user without sending email.")
+                manual_email = st.text_input("User email to verify", key="manual_verify_email", placeholder="user@example.com").strip().lower()
+                if st.button("Verify User Immediately", type="primary", key="manual_verify_btn", use_container_width=True):
+                    if not manual_email:
+                        st.error("Enter an email address.")
+                    else:
+                        live_reg = load_global_registry()
+                        if manual_email in live_reg:
+                            live_reg[manual_email]["verified"] = True
+                            save_global_registry(live_reg)
+                            st.success(f"✅ {manual_email} is now verified!")
+                        else:
+                            st.error("Email not found in registry.")
+
+            st.markdown("<hr style='margin: 12px 0;'>", unsafe_allow_html=True)
             new_email = st.text_input("Account Email Address", key="adm_new_email_field").strip().lower()
             new_name = st.text_input("Account Employee Full Name", key="adm_new_name_field").strip()
             new_password = st.text_input("Assign Access Password", type="password", key="adm_new_password_field").strip()
@@ -1385,6 +1564,55 @@ if IS_ADMIN:
         with adm_col2:
             st.markdown("**Active Authorized System Users Registry**")
             live_reg = load_global_registry()
+
+            # ─── DELETE USER SECTION ───
+            with st.expander("🗑️ Delete Existing User", expanded=False):
+                st.caption("Permanently remove a user from the system registry.")
+
+                # Get list of deletable users (exclude current admin to prevent self-lockout)
+                current_admin_email = st.session_state.current_user["email"]
+                deletable_users = {email: data for email, data in live_reg.items() if email != current_admin_email}
+
+                if not deletable_users:
+                    st.info("No deletable users found (you cannot delete your own account).")
+                else:
+                    delete_email = st.selectbox(
+                        "Select user to delete",
+                        options=list(deletable_users.keys()),
+                        format_func=lambda x: f"{x} ({deletable_users[x]['name']} — {deletable_users[x]['role']})",
+                        key="admin_delete_user_select"
+                    )
+
+                    # Show selected user details before deletion
+                    if delete_email:
+                        user_data = deletable_users[delete_email]
+                        st.markdown(f"""
+                        <div style='padding: 8px; background-color: #FFF3CD; border-radius: 4px; margin: 8px 0;'>
+                            <p style='margin:0; font-size:0.8rem;'><strong>Name:</strong> {user_data['name']}</p>
+                            <p style='margin:0; font-size:0.8rem;'><strong>Role:</strong> {user_data['role']}</p>
+                            <p style='margin:0; font-size:0.8rem;'><strong>Verified:</strong> {"✅ Yes" if user_data.get('verified') else "⏳ No"}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        # Confirmation checkbox
+                        confirm_delete = st.checkbox(
+                            f"I confirm I want to permanently delete {delete_email}",
+                            key="confirm_delete_checkbox"
+                        )
+
+                        if st.button("🗑️ Permanently Delete User", type="primary", use_container_width=True, key="execute_delete_user_btn"):
+                            if not confirm_delete:
+                                st.error("❌ You must check the confirmation box before deleting.")
+                            else:
+                                # Perform deletion
+                                del live_reg[delete_email]
+                                save_global_registry(live_reg)
+                                st.success(f"✅ User '{delete_email}' has been permanently deleted from the system.")
+                                st.rerun()
+
+            st.markdown("<hr style='margin: 12px 0;'>", unsafe_allow_html=True)
+
+            # ─── USER REGISTRY TABLE ───
             reg_records = []
             for email, data in live_reg.items():
                 # Logic to determine password display based on toggle state
@@ -1399,3 +1627,27 @@ if IS_ADMIN:
                 })
 
             st.table(pd.DataFrame(reg_records))
+
+            # ─── SYSTEM STATISTICS MANAGEMENT ───
+            st.markdown("<hr style='margin: 16px 0;'>", unsafe_allow_html=True)
+            st.markdown("**System Production Statistics**")
+
+            stats_col1, stats_col2, stats_col3 = st.columns(3)
+            with stats_col1:
+                st.metric("ESM Labels", st.session_state.stats_total_esm)
+            with stats_col2:
+                st.metric("EFF Labels", st.session_state.stats_total_eff)
+            with stats_col3:
+                st.metric("Other Labels", st.session_state.stats_total_other)
+
+            reset_confirm = st.text_input("Type RESET-STATS to reset all counters to zero", key="admin_stats_reset_confirm")
+            if st.button("🔄 Reset All Statistics", type="secondary", use_container_width=True, key="admin_reset_stats_btn"):
+                if reset_confirm.strip().upper() == "RESET-STATS":
+                    st.session_state.stats_total_esm = 0
+                    st.session_state.stats_total_eff = 0
+                    st.session_state.stats_total_other = 0
+                    sync_stats_to_disk()
+                    st.success("✅ All statistics have been reset to zero.")
+                    st.rerun()
+                else:
+                    st.error("❌ Confirmation failed. Type RESET-STATS (all caps) to confirm.")
